@@ -3,17 +3,17 @@ requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "ai-spreadsheets"
+name = "text-spreadsheet"
 version = "0.1.0"
 description = "Read a whole multi-sheet spreadsheet as MTSV text"
 readme = "README.md"
-requires-python = ">=3.10"
+requires-python = ">=3.11"
 license = "MIT"
 license-files = ["LICENSE"]
 authors = [{ name = "Demos Ra", email = "demos_ra@hotmail.com" }]
 keywords = ["mtsv", "spreadsheet", "tabular data"]
-dependencies = ["mtsv>=0.3"]
+dependencies = ["mtsv>=0.6"]
 
 [project.urls]
-source = "https://github.com/demos-ra/ai-spreadsheets"
-issues = "https://github.com/demos-ra/ai-spreadsheets/issues"
+source = "https://github.com/demos-ra/text-spreadsheet"
+issues = "https://github.com/demos-ra/text-spreadsheet/issues"

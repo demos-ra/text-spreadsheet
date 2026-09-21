@@ -1,4 +1,4 @@
-# ai-spreadsheets
+# text-spreadsheet
 
 Read a whole multi-sheet spreadsheet as MTSV text, so that a language
 model can work on it directly. A spreadsheet is named by a URI, and the
@@ -14,8 +14,9 @@ sheets come back in the data model that
 |-----------|----------------------------------------------|
 | `python/` | Python implementation of the operations      |
 
-Each language folder holds one implementation. The operations are the
-same for every language, and every one of them reads and writes MTSV.
+Each language folder holds one implementation. An operation returns the
+data model that MTSV defines; MTSV itself is what crosses the boundary
+to whoever asked.
 
 ## Python
 
@@ -26,6 +27,12 @@ Its version is the `version` field of
 ## Status
 
 Not released. The read operation and file URI addressing are in place.
+
+## Help
+
+Report a problem or ask a question in the
+[issue tracker](https://github.com/demos-ra/text-spreadsheet/issues).
+text-spreadsheet is maintained by Demos Ra.
 
 ## License
 

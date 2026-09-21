@@ -11,7 +11,7 @@ from pathlib import Path
 import mtsv
 from mtsv.integrations import xlsx
 
-from ai_spreadsheets import read
+from text_spreadsheet import read
 
 SHEETS = [
     {"sheet name": "People", "header": ["Name"], "records": [["Ada"]]}
@@ -61,7 +61,7 @@ class TestRead(unittest.TestCase):
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory, "book")
             path.write_bytes(b"a\n")
-            with self.assertRaises(ValueError):
+            with self.assertRaises(LookupError):
                 read(path.as_uri())
 
 

@@ -1,16 +1,16 @@
-# ai-spreadsheets for Python
+# text-spreadsheet for Python
 
 Read a whole multi-sheet spreadsheet as MTSV sheets. A file is named by
 a file URI, and its extension names the format. The version is the
 `version` field of `pyproject.toml`.
 
-* [Repository](https://github.com/demos-ra/ai-spreadsheets)
+* [Repository](https://github.com/demos-ra/text-spreadsheet)
 * [Specification](https://github.com/demos-ra/mtsv-spec)
 
 ## Install
 
 ```
-pip install ai-spreadsheets
+pip install text-spreadsheet
 ```
 
 A Python that an operating system manages does not accept packages
@@ -18,16 +18,16 @@ directly, so install into a virtual environment:
 
 ```
 python3 -m venv .venv
-.venv/bin/pip install ai-spreadsheets
+.venv/bin/pip install text-spreadsheet
 ```
 
 To install from a clone instead, run the same commands from the root of
-the repository with `./python` in place of `ai-spreadsheets`.
+the repository with `./python` in place of `text-spreadsheet`.
 
 ## Read a spreadsheet
 
 ```python
-from ai_spreadsheets import read
+from text_spreadsheet import read
 
 sheets = read("file:///home/me/book.xlsx")
 ```
@@ -55,7 +55,7 @@ file://localhost/home/me/book.xlsx
 
 | Path                      | Contents                          |
 |---------------------------|-----------------------------------|
-| `src/ai_spreadsheets/`    | the operations, and addressing    |
+| `src/text_spreadsheet/`    | the operations, and addressing    |
 | `tests/`                  | the test suite, run against the install |
 
 ## Test
@@ -68,4 +68,4 @@ From the root of the repository:
 
 ## License
 
-[MIT](https://github.com/demos-ra/ai-spreadsheets/blob/main/LICENSE)
+[MIT](https://github.com/demos-ra/text-spreadsheet/blob/main/LICENSE)
