@@ -1,32 +1,34 @@
 # text-spreadsheet
 
-Read a whole multi-sheet spreadsheet as MTSV text, so that a language
-model can work on it directly. A spreadsheet is named by a URI, and the
-sheets come back in the data model that
-[MTSV](https://github.com/demos-ra/mtsv) defines.
+Let a language model read a whole multi-sheet spreadsheet as text. The
+model calls one tool with a path, and Excel, ODS, CSV, SQLite, Parquet
+and Arrow files come back as [MTSV](https://github.com/demos-ra/mtsv),
+one plain-text file that holds every sheet.
 
 * [Specification](https://github.com/demos-ra/mtsv-spec)
-* [Engine](https://github.com/demos-ra/mtsv)
+* [MTSV, which does the converting](https://github.com/demos-ra/mtsv)
 
 ## Layout
 
-| Folder    | Contents                                     |
-|-----------|----------------------------------------------|
-| `python/` | Python implementation of the operations      |
+| Path          | Contents                                              |
+|---------------|-------------------------------------------------------|
+| `server.json` | the entry that lists this server in the MCP registry  |
+| `python/`     | Python implementation of the server                   |
 
-Each language folder holds one implementation. An operation returns the
-data model that MTSV defines; MTSV itself is what crosses the boundary
-to whoever asked.
+Each language folder holds one implementation of the same server. This
+repository holds no format code: every conversion is MTSV's, and what a
+spreadsheet holds that MTSV does not is reported as MTSV reports it.
 
 ## Python
 
-See [python/README.md](python/README.md) to install and use the package.
-Its version is the `version` field of
+See [python/README.md](python/README.md) to install and use it. Its
+version is the `version` field of
 [python/pyproject.toml](python/pyproject.toml).
 
 ## Status
 
-Not released. The read operation and file URI addressing are in place.
+Not released. The read tool, its four levels of address, and the cache
+are in place.
 
 ## Help
 

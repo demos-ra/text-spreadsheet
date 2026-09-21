@@ -1,61 +1,102 @@
+<!-- mcp-name: io.github.demos-ra/text-spreadsheet -->
+
 # text-spreadsheet for Python
 
-Read a whole multi-sheet spreadsheet as MTSV sheets. A file is named by
-a file URI, and its extension names the format. The version is the
-`version` field of `pyproject.toml`.
+Let a language model read a whole multi-sheet spreadsheet as text.
+Excel, ODS, CSV, SQLite, Parquet and Arrow files come back as
+[MTSV](https://github.com/demos-ra/mtsv), one plain-text file that
+holds every sheet. The version is the `version` field of
+`pyproject.toml`.
 
 * [Repository](https://github.com/demos-ra/text-spreadsheet)
 * [Specification](https://github.com/demos-ra/mtsv-spec)
 
 ## Install
 
-```
-pip install text-spreadsheet
-```
-
-A Python that an operating system manages does not accept packages
-directly, so install into a virtual environment:
+In an environment of its own:
 
 ```
-python3 -m venv .venv
-.venv/bin/pip install text-spreadsheet
+pipx install text-spreadsheet
 ```
 
-To install from a clone instead, run the same commands from the root of
-the repository with `./python` in place of `text-spreadsheet`.
+Then tell your host to launch it. For Claude Code:
 
-## Read a spreadsheet
+```
+claude mcp add text-spreadsheet -- text-spreadsheet
+```
+
+Other hosts take the same command in a configuration file, under
+`mcpServers` or `servers`.
+
+## The tool
+
+The model calls `read` with a path:
+
+```
+read("/home/me/book.xlsx")
+```
+
+and gets a map of the file: its sheets, the columns of each, where
+each sheet's lines are, and what the conversion left behind.
+
+```
+<FF>file
+source	artifact	converted
+/home/me/book.xlsx	/home/me/.cache/text-spreadsheet/home/me/book.mtsv	yes
+<FF>sheets
+sheet	sheet name	first line	last line
+1	People	1	6
+2	Orders	7	208
+<FF>columns
+sheet	position	field name
+1	1	Name
+1	2	Age
+<FF>left behind
+what
+cell type n
+```
+
+Adding an address returns that part of the file instead of the map:
+
+```
+read("/home/me/book.xlsx", sheet="2")
+read("/home/me/book.xlsx", sheet="2", rows="40-120")
+read("/home/me/book.xlsx", sheet="2", rows="40-120", fields="2;4")
+```
+
+Each address counts from 1 and is written as `2`, `1;3` or `1-3`, as
+[RFC 7111](https://www.rfc-editor.org/rfc/rfc7111.html) writes a
+selection of a tabular file. An address the file cannot answer is
+refused rather than guessed.
+
+## What is kept
+
+Every conversion leaves an MTSV copy of the file under your cache
+directory — `~/.cache/text-spreadsheet` on Linux,
+`~/Library/Caches/text-spreadsheet` on macOS — mirroring the path of
+the file it came from. A later call reads that copy unless the file
+has changed since, and the map names where it is, so it can also be
+read directly.
+
+Nothing else is kept, and nothing outside this machine is contacted.
+
+## As a library
 
 ```python
 from text_spreadsheet import read
 
-sheets = read("file:///home/me/book.xlsx")
+text = read("/home/me/book.xlsx")
 ```
 
-Sheets are a list of dictionaries with `"sheet name"`, `"header"`, and
-`"records"`, the same shape as the
-[conformance results](https://github.com/demos-ra/mtsv/blob/main/conformance/README.md).
-
-Whatever a spreadsheet holds that MTSV does not raises `ValueError` by
-default. To confirm and leave it behind, pass `errors="ignore"`.
-
-## Addressing
-
-A file is named by a file URI, as
-[RFC 8089](https://www.rfc-editor.org/rfc/rfc8089.html) defines it: the
-path is absolute, and the URI is local, meaning it carries no authority
-or the authority `localhost`.
-
-```
-file:///home/me/book.xlsx
-file://localhost/home/me/book.xlsx
-```
+`read` returns MTSV text, whatever the format it came from. Whatever
+a spreadsheet holds that MTSV does not — formatting, formulas, types
+— is left behind, and named in the map.
 
 ## Layout
 
-| Path                      | Contents                          |
-|---------------------------|-----------------------------------|
-| `src/text_spreadsheet/`    | the operations, and addressing    |
+| Path                      | Contents                                |
+|---------------------------|-----------------------------------------|
+| `src/text_spreadsheet/`   | the server, the tool, and what it runs on |
 | `tests/`                  | the test suite, run against the install |
 
 ## Test
@@ -63,6 +104,8 @@ file://localhost/home/me/book.xlsx
 From the root of the repository:
 
 ```
+python3 -m venv .venv
+.venv/bin/pip install ./python
 .venv/bin/python -m unittest discover -s python/tests
 ```
 

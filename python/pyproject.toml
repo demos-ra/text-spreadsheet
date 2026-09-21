@@ -12,7 +12,10 @@ license = "MIT"
 license-files = ["LICENSE"]
 authors = [{ name = "Demos Ra", email = "demos_ra@hotmail.com" }]
 keywords = ["mtsv", "spreadsheet", "tabular data"]
-dependencies = ["mtsv>=0.6"]
+dependencies = ["mtsv>=0.6", "platformdirs", "mcp"]
+
+[project.scripts]
+text-spreadsheet = "text_spreadsheet.__main__:main"
 
 [project.urls]
 source = "https://github.com/demos-ra/text-spreadsheet"
