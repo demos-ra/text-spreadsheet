@@ -1,9 +1,11 @@
 # text-spreadsheet
 
 Let a language model read a whole multi-sheet spreadsheet as text. The
-model calls one tool with a path, and Excel, ODS, CSV, SQLite, Parquet
-and Arrow files come back as [MTSV](https://github.com/demos-ra/mtsv),
-one plain-text file that holds every sheet.
+model calls one tool with the path of a file on your machine, and
+Excel, ODS, CSV, SQLite, Parquet and Arrow come back as
+[MTSV](https://github.com/demos-ra/mtsv): one plain-text file where a
+tab separates fields, a line break separates records, and a form feed
+separates sheets.
 
 * [Specification](https://github.com/demos-ra/mtsv-spec)
 * [MTSV, which does the converting](https://github.com/demos-ra/mtsv)
@@ -27,8 +29,11 @@ version is the `version` field of
 
 ## Status
 
-Not released. The read tool, its four levels of address, and the cache
-are in place.
+Released on PyPI as
+[text-spreadsheet](https://pypi.org/project/text-spreadsheet/) and in
+the [MCP registry](https://registry.modelcontextprotocol.io) as
+`io.github.demos-ra/text-spreadsheet`. Versions follow
+[Semantic Versioning](https://semver.org).
 
 ## Help
 

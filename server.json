@@ -2,13 +2,13 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.demos-ra/text-spreadsheet",
   "title": "Text Spreadsheet",
-  "description": "Read a whole multi-sheet spreadsheet as MTSV text",
-  "version": "0.1.0",
+  "description": "Let your AI read a whole spreadsheet as tab-separated text — Excel, ODS, SQLite and more",
+  "version": "0.1.1",
   "packages": [
     {
       "registryType": "pypi",
       "identifier": "text-spreadsheet",
-      "version": "0.1.0",
+      "version": "0.1.1",
       "transport": {
         "type": "stdio"
       }

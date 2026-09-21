@@ -42,6 +42,9 @@ def read(
     where each sheet's lines are, and what the conversion left behind.
     Add an address to return that part of the file instead.
 
+    The reply is tab-separated text: a tab between fields, a line break
+    between records, and a form feed before each sheet's name.
+
     path -- the absolute path of the file to read
     sheet -- which sheets, as 2, 1;3 or 1-3, counting from 1
     rows -- which records of each sheet, written the same way

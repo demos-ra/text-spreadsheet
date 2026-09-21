@@ -2,11 +2,14 @@
 
 # text-spreadsheet for Python
 
-Let a language model read a whole multi-sheet spreadsheet as text.
-Excel, ODS, CSV, SQLite, Parquet and Arrow files come back as
-[MTSV](https://github.com/demos-ra/mtsv), one plain-text file that
-holds every sheet. The version is the `version` field of
-`pyproject.toml`.
+Let a language model read a whole multi-sheet spreadsheet as text. The
+model calls one tool with the path of a file on your machine, and
+Excel, ODS, CSV, SQLite, Parquet and Arrow come back as
+[MTSV](https://github.com/demos-ra/mtsv): one plain-text file where a
+tab separates fields, a line break separates records, and a form feed
+separates sheets.
+
+The version is the `version` field of `pyproject.toml`.
 
 * [Repository](https://github.com/demos-ra/text-spreadsheet)
 * [Specification](https://github.com/demos-ra/mtsv-spec)

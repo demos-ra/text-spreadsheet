@@ -4,14 +4,14 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "text-spreadsheet"
-version = "0.1.0"
-description = "Read a whole multi-sheet spreadsheet as MTSV text"
+version = "0.1.1"
+description = "Let your AI read a whole spreadsheet as tab-separated text — Excel, ODS, SQLite and more"
 readme = "README.md"
 requires-python = ">=3.11"
 license = "MIT"
 license-files = ["LICENSE"]
 authors = [{ name = "Demos Ra", email = "demos_ra@hotmail.com" }]
-keywords = ["mtsv", "spreadsheet", "tabular data"]
+keywords = ["mcp", "spreadsheet", "excel", "ods", "sqlite", "parquet", "mtsv"]
 dependencies = ["mtsv>=0.6", "platformdirs", "mcp"]
 
 [project.scripts]
