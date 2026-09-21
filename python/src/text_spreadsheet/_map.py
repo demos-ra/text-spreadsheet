@@ -50,17 +50,30 @@ def _file(source: Path, stored: Path, converted: bool) -> dict[str, Any]:
 
 
 def _sheets(sheets: list[dict[str, Any]]) -> dict[str, Any]:
-    """Return the sheet naming each sheet and where its lines are."""
-    records = []
+    """Return the sheet naming each sheet, its records and its lines.
+
+    The draft, Data Model: a sheet is a header and an ordered sequence
+    of records, so how many records it holds is what the rows address
+    counts.
+    """
+    rows = []
     line = 1
     for number, sheet in enumerate(sheets, 1):
         last = line + _FF_LINE + _lines(sheet) - 1
-        records.append([str(number), sheet["sheet name"], str(line), str(last)])
+        rows.append(
+            [
+                str(number),
+                sheet["sheet name"],
+                str(len(sheet["records"])),
+                str(line),
+                str(last),
+            ]
+        )
         line = last + 1
     return {
         "sheet name": "sheets",
-        "header": ["sheet", "sheet name", "first line", "last line"],
-        "records": records,
+        "header": ["sheet", "sheet name", "records", "first line", "last line"],
+        "records": rows,
     }
 
 

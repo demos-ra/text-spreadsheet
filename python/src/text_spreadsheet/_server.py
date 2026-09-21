@@ -38,9 +38,10 @@ def read(
     """Read a spreadsheet as text, every sheet at once.
 
     Excel, ODS, CSV, SQLite, Parquet and Arrow files. With a path
-    alone, return a map of the file: its sheets, the columns of each,
-    where each sheet's lines are, and what the conversion left behind.
-    Add an address to return that part of the file instead.
+    alone, return a map of the file: its sheets, how many records each
+    holds, the columns of each, where each sheet's lines are, and what
+    the conversion left behind. Add an address to return that part of
+    the file instead.
 
     The reply is tab-separated text: a tab between fields, a line break
     between records, and a form feed before each sheet's name.

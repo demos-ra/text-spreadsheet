@@ -39,17 +39,18 @@ The model calls `read` with a path:
 read("/home/me/book.xlsx")
 ```
 
-and gets a map of the file: its sheets, the columns of each, where
-each sheet's lines are, and what the conversion left behind.
+and gets a map of the file: its sheets, how many records each holds,
+the columns of each, where each sheet's lines are, and what the
+conversion left behind.
 
 ```
 <FF>file
 source	artifact	converted
 /home/me/book.xlsx	/home/me/.cache/text-spreadsheet/home/me/book.mtsv	yes
 <FF>sheets
-sheet	sheet name	first line	last line
-1	People	1	6
-2	Orders	7	208
+sheet	sheet name	records	first line	last line
+1	People	4	1	6
+2	Orders	200	7	208
 <FF>columns
 sheet	position	field name
 1	1	Name

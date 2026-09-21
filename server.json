@@ -3,12 +3,12 @@
   "name": "io.github.demos-ra/text-spreadsheet",
   "title": "Text Spreadsheet",
   "description": "Let your AI read a whole spreadsheet as tab-separated text — Excel, ODS, SQLite and more",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "packages": [
     {
       "registryType": "pypi",
       "identifier": "text-spreadsheet",
-      "version": "0.1.1",
+      "version": "0.1.2",
       "transport": {
         "type": "stdio"
       }

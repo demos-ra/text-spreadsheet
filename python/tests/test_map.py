@@ -49,27 +49,34 @@ class TestOf(unittest.TestCase):
         self.assertEqual(named(value, "file")["records"][0][2], "no")
 
     def test_sheets(self):
-        """Each sheet is named, numbered, and given its lines."""
+        """Each sheet is numbered, named, counted, and given its lines."""
         self.assertEqual(
             named(self.value, "sheets")["records"],
             [
-                ["1", "People", "1", "3"],
-                ["2", "Empty", "4", "4"],
-                ["3", "Notes", "5", "8"],
+                ["1", "People", "1", "1", "3"],
+                ["2", "Empty", "0", "4", "4"],
+                ["3", "Notes", "2", "5", "8"],
             ],
         )
+
+    def test_records_are_what_rows_addresses(self):
+        """The count is the records, not the lines they occupy."""
+        for record in named(self.value, "sheets")["records"]:
+            with self.subTest(record[1]):
+                sheet = SHEETS[int(record[0]) - 1]
+                self.assertEqual(int(record[2]), len(sheet["records"]))
 
     def test_lines_match_the_generator(self):
         """Every first line is where the generator writes an FF."""
         lines = mtsv.dumps(SHEETS).split(chr(0x0A))
         for record in named(self.value, "sheets")["records"]:
             with self.subTest(record[1]):
-                self.assertTrue(lines[int(record[2]) - 1].startswith(FF))
+                self.assertTrue(lines[int(record[3]) - 1].startswith(FF))
 
     def test_last_line_is_the_last(self):
         """The last sheet ends on the last line of the text."""
         lines = mtsv.dumps(SHEETS).split(chr(0x0A))
-        last = named(self.value, "sheets")["records"][-1][3]
+        last = named(self.value, "sheets")["records"][-1][4]
         self.assertEqual(int(last), len(lines) - 1)
 
     def test_columns(self):
