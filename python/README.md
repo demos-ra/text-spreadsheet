@@ -94,10 +94,23 @@ a spreadsheet holds that MTSV does not — formatting, formulas, types
 
 ## Layout
 
-| Path                      | Contents                                |
-|---------------------------|-----------------------------------------|
-| `src/text_spreadsheet/`   | the server, the tool, and what it runs on |
-| `tests/`                  | the test suite, run against the install |
+Each module hides one decision, named beside it.
+
+```
+src/text_spreadsheet/
+  _cache       where the copy lives, and whether it is fresh
+  _report      what an integration left behind, as it reported it
+  _map         what a file is made of
+  _slice       how an address is written, and how a cut is made
+  __init__     the operation: convert, keep, and answer
+  _server      the tool, its annotations, and the transport
+  __main__     the command a host launches
+tests/         one test file per module above
+```
+
+Use points one way: `__main__` to `_server` to `read`, and `read` to
+the four below it. Nothing points back up, and nothing but `_server`
+knows the protocol.
 
 ## Test
 
