@@ -9,7 +9,7 @@ from text_spreadsheet import _map
 
 FF = chr(0x0C)
 SOURCE = Path("/home/me/book.xlsx")
-STORED = Path("/home/me/.cache/text-spreadsheet/home/me/book.mtsv")
+STORED = Path("/home/me/.cache/text-spreadsheet/home/me/book.xlsx.mtsv")
 SHEETS = [
     {"sheet name": "People", "header": ["Name", "Age"], "records": [["Ada", "36"]]},
     {"sheet name": "Empty", "header": None, "records": []},

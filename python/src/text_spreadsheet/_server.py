@@ -17,17 +17,19 @@ import text_spreadsheet
 mcp = MCPServer("text-spreadsheet")
 
 
-# MCP, schema ToolAnnotations: readOnlyHint is false because the tool
-# writes the copy; destructiveHint false because it only adds;
-# idempotentHint true because the same arguments write the same copy;
-# openWorldHint false because a file system is a closed domain.
+# MCP, schema ToolAnnotations: "additional properties describing a Tool
+# to clients", each a hint.
+# MCP, server/tools Structured Content: "a tool that returns structured
+# content SHOULD also return the serialized JSON in a TextContent
+# block".
 @mcp.tool(
     annotations=ToolAnnotations(
         read_only_hint=False,
         destructive_hint=False,
         idempotent_hint=True,
         open_world_hint=False,
-    )
+    ),
+    structured_output=False,
 )
 def read(
     path: str,
@@ -50,6 +52,10 @@ def read(
     sheet -- which sheets, as 2, 1;3 or 1-3, counting from 1
     rows -- which records of each sheet, written the same way
     fields -- which fields of each record, written the same way
+
+    The path must be absolute. A file that cannot be read, an
+    extension this server has no format for, and an address the file
+    does not have are each refused rather than guessed.
 
     A copy of the file is kept as MTSV under the cache directory, and
     the map names where, so it can be read directly afterwards.

@@ -6,6 +6,7 @@ read -- return the map of a file, or the part of it an address names
 
 __all__ = ["read"]
 
+import io
 from pathlib import Path
 from typing import Any
 
@@ -31,8 +32,10 @@ def read(
 
     Convert the file and keep the copy, or read the copy when the file
     is no newer than it. Raise ValueError for a path that is not
-    absolute or an address the file cannot answer, and LookupError for
-    an extension that names no format.
+    absolute, a file that cannot be converted, or an address the file
+    cannot answer; LookupError for an extension that names no format;
+    and OSError for a file that cannot be read, or a copy that cannot
+    be written.
     """
     source = Path(path)
     stored = _cache.artifact(source)
@@ -48,17 +51,17 @@ def read(
     return mtsv.dumps(_slice.of(sheets, sheet, rows, fields))
 
 
-def _stored(stored: Path) -> list[dict[str, Any]]:
-    """Return the sheets of a copy that may still be used."""
-    with stored.open("rb") as fp:
-        return mtsv.load(fp)
-
-
 def _converted(source: Path, stored: Path) -> list[dict[str, Any]]:
     """Convert a file, keep the copy, and return its sheets."""
     with source.open("rb") as fp:
         sheets = integrations.load(source.suffix, fp, errors="ignore")
-    stored.parent.mkdir(parents=True, exist_ok=True)
-    with stored.open("wb") as out:
+    with io.BytesIO() as out:
         mtsv.dump(sheets, out)
+        _cache.store(stored, out.getvalue())
     return sheets
+
+
+def _stored(stored: Path) -> list[dict[str, Any]]:
+    """Return the sheets of a copy that may still be used."""
+    with stored.open("rb") as fp:
+        return mtsv.load(fp)

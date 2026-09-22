@@ -51,15 +51,15 @@ def _cut(sheet: dict[str, Any], rows: str | None, fields: str | None) -> dict[st
 
     The draft, Data Model: a sheet is a header and a sequence of
     records, so a cut sheet keeps its header, and a header is cut by
-    the same field positions as its records.
+    the same field positions as its records. A sheet with no lines has
+    no field to name, as it has no record to name.
     """
     header = sheet["header"]
     records = sheet["records"]
     if rows is not None:
         records = [records[number - 1] for number in _positions(rows, len(records))]
-    if fields is not None and header is not None:
-        width = len(header)
-        wanted = _positions(fields, width)
+    if fields is not None:
+        wanted = _positions(fields, len(header or []))
         header = [header[number - 1] for number in wanted]
         records = [[record[number - 1] for number in wanted] for record in records]
     return {

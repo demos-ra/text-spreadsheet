@@ -1,16 +1,24 @@
 """Test text_spreadsheet._server against the MCP Python SDK."""
 
+import asyncio
 import shutil
 import tempfile
 import unittest
 from pathlib import Path
 
 import mtsv
+from mcp.types import ToolAnnotations
 from mtsv.integrations import xlsx
 
 from text_spreadsheet import _cache, _server
 
 SHEETS = [{"sheet name": "People", "header": ["Name"], "records": [["Ada"]]}]
+
+
+def published(name):
+    """Return a tool as a host lists it."""
+    tools = asyncio.run(_server.mcp.list_tools())
+    return next(one for one in tools if one.name == name)
 
 
 class TestServer(unittest.TestCase):
@@ -36,6 +44,22 @@ class TestRead(unittest.TestCase):
     def test_describes_itself(self):
         """The description is the docstring, as the SDK derives it."""
         self.assertTrue(_server.read.__doc__.startswith("Read a spreadsheet"))
+
+    def test_no_structured_content(self):
+        """No output schema is published, so the reply is the text."""
+        self.assertIsNone(published("read").output_schema)
+
+    def test_publishes_its_annotations(self):
+        """The hints are published as the tool declares them."""
+        self.assertEqual(
+            published("read").annotations,
+            ToolAnnotations(
+                read_only_hint=False,
+                destructive_hint=False,
+                idempotent_hint=True,
+                open_world_hint=False,
+            ),
+        )
 
     def test_maps_a_file(self):
         """A path alone gives the map of the file."""

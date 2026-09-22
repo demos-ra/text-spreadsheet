@@ -12,7 +12,7 @@ license = "MIT"
 license-files = ["LICENSE"]
 authors = [{ name = "Demos Ra", email = "demos_ra@hotmail.com" }]
 keywords = ["mcp", "spreadsheet", "excel", "ods", "sqlite", "parquet", "mtsv"]
-dependencies = ["mtsv>=0.6", "platformdirs", "mcp"]
+dependencies = ["mtsv[arrow]>=0.6", "platformdirs", "mcp"]
 
 [project.scripts]
 text-spreadsheet = "text_spreadsheet.__main__:main"

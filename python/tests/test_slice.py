@@ -31,7 +31,7 @@ class TestSheets(unittest.TestCase):
         self.assertEqual(_slice.of(SHEETS, sheet="1;3"), [SHEETS[0], SHEETS[2]])
 
     def test_a_range(self):
-        """RFC 7111, 2.2: two positions joined by "-"."""
+        """RFC 7111, 3: two positions joined by "-"."""
         self.assertEqual(_slice.of(SHEETS, sheet="1-3"), SHEETS)
 
     def test_the_order_written(self):
@@ -78,11 +78,9 @@ class TestFields(unittest.TestCase):
         )
 
     def test_an_empty_sheet(self):
-        """A sheet with no lines has no fields to cut."""
-        self.assertEqual(
-            _slice.of(SHEETS, sheet="2", fields="1"),
-            [{"sheet name": "B", "header": None, "records": []}],
-        )
+        """A sheet with no lines has no field to name, so it is refused."""
+        with self.assertRaises(ValueError):
+            _slice.of(SHEETS, sheet="2", fields="1")
 
     def test_past_the_end(self):
         """A field the sheet does not have is refused."""

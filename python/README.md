@@ -46,7 +46,7 @@ conversion left behind.
 ```
 <FF>file
 source	artifact	converted
-/home/me/book.xlsx	/home/me/.cache/text-spreadsheet/home/me/book.mtsv	yes
+/home/me/book.xlsx	/home/me/.cache/text-spreadsheet/home/me/book.xlsx.mtsv	yes
 <FF>sheets
 sheet	sheet name	records	first line	last line
 1	People	4	1	6
@@ -78,9 +78,9 @@ refused rather than guessed.
 Every conversion leaves an MTSV copy of the file under your cache
 directory — `~/.cache/text-spreadsheet` on Linux,
 `~/Library/Caches/text-spreadsheet` on macOS — mirroring the path of
-the file it came from. A later call reads that copy unless the file
-has changed since, and the map names where it is, so it can also be
-read directly.
+the file it came from, with `.mtsv` added to its name. A later call
+reads that copy unless the file has changed since, and the map names
+where it is, so it can also be read directly.
 
 Nothing else is kept, and nothing outside this machine is contacted.
 
@@ -102,7 +102,7 @@ Each module hides one decision, named beside it.
 
 ```
 src/text_spreadsheet/
-  _cache       where the copy lives, and whether it is fresh
+  _cache       where the copy is kept, and whether it is fresh
   _report      what an integration left behind, as it reported it
   _map         what a file is made of
   _slice       how an address is written, and how a cut is made
