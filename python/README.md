@@ -9,7 +9,11 @@ Excel, ODS, CSV, SQLite, Parquet and Arrow come back as
 tab separates fields, a line break separates records, and a form feed
 separates sheets.
 
-The version is the `version` field of `pyproject.toml`.
+A language model reads text, so a binary workbook is a dead end —
+without pandas or openpyxl in the loop, it cannot see inside an
+`.xlsx` at all. This converts the whole file, every sheet, in one
+call, so the model reads a spreadsheet the way it reads any other
+text file.
 
 * [Repository](https://github.com/demos-ra/text-spreadsheet)
 * [Specification](https://github.com/demos-ra/mtsv-spec)
@@ -22,14 +26,25 @@ In an environment of its own:
 pipx install text-spreadsheet
 ```
 
-Then tell your host to launch it. For Claude Code:
+Then tell your host to launch `text-spreadsheet`, with no arguments.
+It is one entry, once — after that the tool is in every session. Most
+hosts read a configuration file:
 
-```
-claude mcp add text-spreadsheet -- text-spreadsheet
+```json
+{
+  "mcpServers": {
+    "text-spreadsheet": {
+      "command": "text-spreadsheet"
+    }
+  }
+}
 ```
 
-Other hosts take the same command in a configuration file, under
-`mcpServers` or `servers`.
+Some hosts use `servers` instead of `mcpServers` and add a `type`, and
+some have their own command that writes the file for you.
+
+The version is the `version` field of `pyproject.toml`, and versions
+follow [Semantic Versioning](https://semver.org).
 
 ## The tool
 
