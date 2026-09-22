@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "text-spreadsheet"
-version = "0.1.2"
+version = "0.2.0"
 description = "Let your AI read a whole spreadsheet as tab-separated text — Excel, ODS, SQLite and more"
 readme = "README.md"
 requires-python = ">=3.11"
