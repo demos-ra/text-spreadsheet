@@ -17,19 +17,6 @@ _LOGGER = "mtsv.integrations"
 _ATTRIBUTE = "left_behind"
 
 
-class _Names(logging.Handler):
-    """A handler that keeps the names a record carries."""
-
-    def __init__(self, names: list[str]) -> None:
-        """Keep the list the names are added to."""
-        super().__init__()
-        self.names = names
-
-    def emit(self, record: logging.LogRecord) -> None:
-        """Add the names of one report to the list."""
-        self.names.extend(getattr(record, _ATTRIBUTE, ()))
-
-
 @contextmanager
 def collect() -> Iterator[list[str]]:
     """Collect the names mtsv leaves behind while its body runs.
@@ -45,3 +32,22 @@ def collect() -> Iterator[list[str]]:
         yield names
     finally:
         logger.removeHandler(handler)
+
+
+class _Names(logging.Handler):
+    """A handler that keeps the names a record carries."""
+
+    def __init__(self, names: list[str]) -> None:
+        """Keep the list the names are added to.
+
+        names -- the list
+        """
+        super().__init__()
+        self.names = names
+
+    def emit(self, record: logging.LogRecord) -> None:
+        """Add the names of one report to the list.
+
+        record -- one report
+        """
+        self.names.extend(getattr(record, _ATTRIBUTE, ()))

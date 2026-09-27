@@ -1,30 +1,36 @@
-"""Test text_spreadsheet._cache against platformdirs and RFC 9111."""
+"""Test text_spreadsheet._cache: platformdirs, RFC 9111, POSIX."""
 
 import os
 import tempfile
 import unittest
 from pathlib import Path
-
-from platformdirs import user_cache_dir
+from unittest import mock
 
 from text_spreadsheet import _cache
 
-CACHE = Path(user_cache_dir("text-spreadsheet", appauthor=False))
+import support
+
+TEXT = "\fPeople\nName\nAda\n"
 
 
 class TestArtifact(unittest.TestCase):
     """artifact: where the MTSV copy of a source file is kept."""
 
+    def test_asks_platformdirs(self):
+        """platformdirs: user_cache_dir, appname, appauthor False."""
+        _cache.artifact(Path("/home/me/book.xlsx"))
+        support.user_cache_dir.assert_called_with("text-spreadsheet", appauthor=False)
+
     def test_under_the_cache_directory(self):
         """The copy sits under the user's cache directory."""
         path = _cache.artifact(Path("/home/me/book.xlsx"))
-        self.assertEqual(path.parts[: len(CACHE.parts)], CACHE.parts)
+        self.assertEqual(path.parts[: len(support.CACHE.parts)], support.CACHE.parts)
 
     def test_mirrors_the_source_path(self):
         """The source path is mirrored, with MTSV added to the name."""
         self.assertEqual(
             _cache.artifact(Path("/home/me/book.xlsx")),
-            CACHE / "home/me/book.xlsx.mtsv",
+            support.CACHE / "home/me/book.xlsx.mtsv",
         )
 
     def test_two_folders_do_not_collide(self):
@@ -35,7 +41,7 @@ class TestArtifact(unittest.TestCase):
         )
 
     def test_the_whole_name_is_kept(self):
-        """Whatever the format, the copy is MTSV, and two never collide."""
+        """Whatever the format, the copy is MTSV; two never collide."""
         names = ("book.xlsx", "book.ods", "book.sqlite", "book.parquet")
         paths = [_cache.artifact(Path("/home/me", name)) for name in names]
         self.assertEqual(len(set(paths)), len(names))
@@ -47,6 +53,82 @@ class TestArtifact(unittest.TestCase):
         """A path that is not absolute raises ValueError."""
         with self.assertRaises(ValueError):
             _cache.artifact(Path("book.xlsx"))
+
+
+class TestStoreAndLoad(unittest.TestCase):
+    """store and load: a copy, and what its conversion left behind."""
+
+    def test_round_trip(self):
+        """What is stored is loaded."""
+        with tempfile.TemporaryDirectory() as directory:
+            stored = Path(directory, "book.xlsx.mtsv")
+            _cache.store(stored, TEXT, ["cell type n"])
+            self.assertEqual(_cache.load(stored), (TEXT, ["cell type n"]))
+
+    def test_metadata_beside_the_copy(self):
+        """CSVW 5.3: the copy's name with -metadata.mtsv added."""
+        with tempfile.TemporaryDirectory() as directory:
+            stored = Path(directory, "book.xlsx.mtsv")
+            _cache.store(stored, TEXT, [])
+            self.assertEqual(
+                sorted(path.name for path in Path(directory).iterdir()),
+                ["book.xlsx.mtsv", "book.xlsx.mtsv-metadata.mtsv"],
+            )
+
+    def test_damaged_metadata(self):
+        """Metadata not as store writes it raises ValueError."""
+        with tempfile.TemporaryDirectory() as directory:
+            stored = Path(directory, "book.xlsx.mtsv")
+            _cache.store(stored, TEXT, [])
+            Path(directory, "book.xlsx.mtsv-metadata.mtsv").write_bytes(b"x\n")
+            with self.assertRaises(ValueError):
+                _cache.load(stored)
+
+    def test_makes_the_folders(self):
+        """Folders that do not exist yet are made."""
+        with tempfile.TemporaryDirectory() as directory:
+            stored = Path(directory, "home", "me", "book.xlsx.mtsv")
+            _cache.store(stored, TEXT, [])
+            self.assertTrue(stored.exists())
+
+    def test_replaces_an_older_copy(self):
+        """A second copy takes the place of the first."""
+        with tempfile.TemporaryDirectory() as directory:
+            stored = Path(directory, "book.xlsx.mtsv")
+            _cache.store(stored, TEXT, ["a"])
+            _cache.store(stored, "", ["b"])
+            self.assertEqual(_cache.load(stored), ("", ["b"]))
+
+    def test_nothing_left_after_an_error(self):
+        """POSIX 1.4: a working file is removed when the write fails."""
+        with tempfile.TemporaryDirectory() as directory:
+            stored = Path(directory, "book.xlsx.mtsv")
+            stored.mkdir()
+            with self.assertRaises(OSError):
+                _cache.store(stored, TEXT, [])
+            self.assertEqual(
+                sorted(path.name for path in Path(directory).iterdir()),
+                ["book.xlsx.mtsv", "book.xlsx.mtsv-metadata.mtsv"],
+            )
+
+    def test_working_name_is_the_process(self):
+        """POSIX 1.4: two processes write under two working names."""
+        with tempfile.TemporaryDirectory() as directory:
+            stored = Path(directory, "book.xlsx.mtsv")
+            written = []
+            original = Path.write_bytes
+
+            def spy(path, data):
+                written.append(path.name)
+                return original(path, data)
+
+            with mock.patch.object(Path, "write_bytes", spy):
+                with mock.patch("os.getpid", return_value=7):
+                    _cache.store(stored, TEXT, [])
+            self.assertEqual(
+                written,
+                ["book.xlsx.mtsv-metadata.mtsv.7.part", "book.xlsx.mtsv.7.part"],
+            )
 
 
 class TestIsFresh(unittest.TestCase):
@@ -61,14 +143,24 @@ class TestIsFresh(unittest.TestCase):
             self.assertFalse(_cache.is_fresh(source, stored))
 
     def test_copy_newer(self):
-        """A copy written after its source is fresh."""
+        """A copy newer than its source, with metadata, is fresh."""
+        with tempfile.TemporaryDirectory() as directory:
+            source = Path(directory, "book.xlsx")
+            source.write_bytes(b"")
+            stored = Path(directory, "book.xlsx.mtsv")
+            _cache.store(stored, TEXT, [])
+            os.utime(source, (0, 0))
+            self.assertTrue(_cache.is_fresh(source, stored))
+
+    def test_copy_without_metadata(self):
+        """A copy without its metadata is not fresh."""
         with tempfile.TemporaryDirectory() as directory:
             source = Path(directory, "book.xlsx")
             source.write_bytes(b"")
             stored = Path(directory, "book.xlsx.mtsv")
             stored.write_bytes(b"")
             os.utime(source, (0, 0))
-            self.assertTrue(_cache.is_fresh(source, stored))
+            self.assertFalse(_cache.is_fresh(source, stored))
 
     def test_source_newer(self):
         """A source changed after its copy is stale."""
@@ -76,42 +168,6 @@ class TestIsFresh(unittest.TestCase):
             source = Path(directory, "book.xlsx")
             source.write_bytes(b"")
             stored = Path(directory, "book.xlsx.mtsv")
-            stored.write_bytes(b"")
+            _cache.store(stored, TEXT, [])
             os.utime(stored, (0, 0))
             self.assertFalse(_cache.is_fresh(source, stored))
-
-
-class TestStore(unittest.TestCase):
-    """store: putting a copy where the copy lives."""
-
-    def test_writes_the_bytes(self):
-        """The copy holds what was handed over."""
-        with tempfile.TemporaryDirectory() as directory:
-            stored = Path(directory, "book.xlsx.mtsv")
-            _cache.store(stored, b"a\n")
-            self.assertEqual(stored.read_bytes(), b"a\n")
-
-    def test_makes_the_folders(self):
-        """Folders that do not exist yet are made."""
-        with tempfile.TemporaryDirectory() as directory:
-            stored = Path(directory, "home", "me", "book.xlsx.mtsv")
-            _cache.store(stored, b"a\n")
-            self.assertTrue(stored.exists())
-
-    def test_replaces_an_older_copy(self):
-        """A second copy takes the place of the first."""
-        with tempfile.TemporaryDirectory() as directory:
-            stored = Path(directory, "book.xlsx.mtsv")
-            _cache.store(stored, b"a\n")
-            _cache.store(stored, b"b\n")
-            self.assertEqual(stored.read_bytes(), b"b\n")
-
-    def test_leaves_nothing_beside_it(self):
-        """Nothing but the copy is left where it was written."""
-        with tempfile.TemporaryDirectory() as directory:
-            stored = Path(directory, "book.xlsx.mtsv")
-            _cache.store(stored, b"a\n")
-            self.assertEqual(
-                [path.name for path in Path(directory).iterdir()],
-                ["book.xlsx.mtsv"],
-            )

@@ -1,9 +1,9 @@
-"""Test text_spreadsheet._report against mtsv's left-behind report."""
+"""Test text_spreadsheet._left_behind against mtsv's report."""
 
 import logging
 import unittest
 
-from text_spreadsheet import _report
+from text_spreadsheet import _left_behind
 
 import support
 
@@ -15,7 +15,7 @@ class TestCollect(unittest.TestCase):
 
     def test_collects_the_names(self):
         """The names a record carries are collected, in order."""
-        with _report.collect() as names:
+        with _left_behind.collect() as names:
             logging.getLogger(LOGGER).warning(
                 "left behind: a, b", extra={"left_behind": ["a", "b"]}
             )
@@ -24,20 +24,20 @@ class TestCollect(unittest.TestCase):
     def test_two_reports(self):
         """More than one report adds to the same list."""
         logger = logging.getLogger(LOGGER)
-        with _report.collect() as names:
+        with _left_behind.collect() as names:
             logger.warning("x", extra={"left_behind": ["a"]})
             logger.warning("y", extra={"left_behind": ["b"]})
         self.assertEqual(names, ["a", "b"])
 
     def test_nothing_reported(self):
         """A body that reports nothing collects nothing."""
-        with _report.collect() as names:
+        with _left_behind.collect() as names:
             pass
         self.assertEqual(names, [])
 
     def test_a_warning_without_names(self):
         """A record with no names of its own adds none."""
-        with _report.collect() as names:
+        with _left_behind.collect() as names:
             logging.getLogger(LOGGER).warning("something else")
         self.assertEqual(names, [])
 
@@ -45,7 +45,7 @@ class TestCollect(unittest.TestCase):
         """The logger is left as it was found."""
         logger = logging.getLogger(LOGGER)
         before = list(logger.handlers)
-        with _report.collect():
+        with _left_behind.collect():
             self.assertEqual(len(logger.handlers), len(before) + 1)
         self.assertEqual(logger.handlers, before)
 
@@ -54,6 +54,6 @@ class TestCollect(unittest.TestCase):
         logger = logging.getLogger(LOGGER)
         before = list(logger.handlers)
         with self.assertRaises(ValueError):
-            with _report.collect():
+            with _left_behind.collect():
                 raise ValueError
         self.assertEqual(logger.handlers, before)

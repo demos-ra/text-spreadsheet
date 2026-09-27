@@ -1,11 +1,11 @@
 # text-spreadsheet
 
 Let a language model read a whole multi-sheet spreadsheet as text. The
-model calls one tool with the path of a file on your machine, and
-Excel, ODS, CSV, SQLite, Parquet and Arrow come back as
-[MTSV](https://github.com/demos-ra/mtsv): one plain-text file where a
-tab separates fields, a line break separates records, and a form feed
-separates sheets.
+model calls one tool with the path of a file, or a folder of files, on
+your machine, and Excel, ODS, CSV, JSON, SQLite, Parquet, Arrow and
+MTSV come back as [MTSV](https://github.com/demos-ra/mtsv): one
+plain-text file where a tab separates fields, a line break separates
+records, and a form feed separates sheets.
 
 A language model reads text, so a binary workbook is a dead end —
 without pandas or openpyxl in the loop, it cannot see inside an
@@ -34,8 +34,8 @@ Released on PyPI as
 the [MCP registry](https://registry.modelcontextprotocol.io) as
 `io.github.demos-ra/text-spreadsheet`.
 
-See [python/README.md](python/README.md) for the tool, the addresses it
-takes and what it keeps. Its version is the `version` field of
+See [python/README.md](python/README.md) for the tool, the addresses
+and filters it takes, and what it keeps. Its version is the `version` field of
 [python/pyproject.toml](python/pyproject.toml), and versions follow
 [Semantic Versioning](https://semver.org).
 

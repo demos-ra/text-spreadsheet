@@ -1,19 +1,18 @@
-"""Read a spreadsheet as MTSV text.
+"""Read spreadsheets as Multi-Sheet Tab-Separated Values (MTSV) text.
+
+The draft is draft-demosra-mtsv-01; the modules cite it by section.
 
 Functions:
-read -- return the map of a file, or the part of it an address names
+read -- return the map of a file or folder, or the part an address names
 """
 
 __all__ = ["read"]
 
-import io
-from pathlib import Path
-from typing import Any
+from functools import partial
 
 import mtsv
-from mtsv import integrations
 
-from text_spreadsheet import _cache, _map, _report, _slice
+from text_spreadsheet import _filter, _input, _map, _selection
 
 
 def read(
@@ -22,46 +21,29 @@ def read(
     sheet: str | None = None,
     rows: str | None = None,
     fields: str | None = None,
+    filter: str | None = None,
 ) -> str:
-    """Return the map of a file, or the part of it an address names.
+    """Return the map of a file or folder, or the part an address names.
 
-    path -- the absolute path of the file to read
-    sheet -- which sheets, or None for the map of the file
+    path -- the absolute path of a file, or of a folder of files
+    sheet -- which sheets, or None for all of them
     rows -- which records of each sheet
     fields -- which fields of each record
+    filter -- which records to keep, an RFC 9535 logical-expr
 
-    Convert the file and keep the copy, or read the copy when the file
-    is no newer than it. Raise ValueError for a path that is not
-    absolute, a file that cannot be converted, or an address the file
-    cannot answer; LookupError for an extension that names no format;
-    and OSError for a file that cannot be read, or a copy that cannot
-    be written.
+    With no position, return the map of what the filter keeps; with a
+    position, return that part. Raise ValueError for a path that is not
+    absolute, an address or filter that is not written as its syntax
+    writes one, or a file named directly that cannot be converted;
+    LookupError for a file named directly whose extension names no
+    format; and OSError for a file that cannot be read, or a copy that
+    cannot be written.
     """
-    source = Path(path)
-    stored = _cache.artifact(source)
-    converted = not _cache.is_fresh(source, stored)
-    left_behind: list[str] = []
-    if converted:
-        with _report.collect() as left_behind:
-            sheets = _converted(source, stored)
-    else:
-        sheets = _stored(stored)
+    condition = None
+    if filter is not None:
+        condition = partial(_filter.matches, _filter.compile(filter))
+    group = _input.of(path)
+    selection = _selection.of(group, sheet, rows, fields, condition)
     if sheet is None and rows is None and fields is None:
-        return mtsv.dumps(_map.of(sheets, source, stored, converted, left_behind))
-    return mtsv.dumps(_slice.of(sheets, sheet, rows, fields))
-
-
-def _converted(source: Path, stored: Path) -> list[dict[str, Any]]:
-    """Convert a file, keep the copy, and return its sheets."""
-    with source.open("rb") as fp:
-        sheets = integrations.load(source.suffix, fp, errors="ignore")
-    with io.BytesIO() as out:
-        mtsv.dump(sheets, out)
-        _cache.store(stored, out.getvalue())
-    return sheets
-
-
-def _stored(stored: Path) -> list[dict[str, Any]]:
-    """Return the sheets of a copy that may still be used."""
-    with stored.open("rb") as fp:
-        return mtsv.load(fp)
+        return mtsv.dumps(_map.of(group, selection))
+    return mtsv.dumps(_selection.values(selection))

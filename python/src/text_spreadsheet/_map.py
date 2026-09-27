@@ -1,88 +1,120 @@
-"""What a file is made of: its sheets, their columns, and what was left.
+"""What a group of files is made of: its files, sheets, columns, losses.
 
 Functions:
-of -- return the map of a file as MTSV sheets
+of -- return the map of a selection as MTSV sheets
 """
 
 __all__ = ["of"]
 
-from pathlib import Path
 from typing import Any
 
-# The draft, Generators: "A generator MUST write an FF line before
-# every sheet, including the first", so a sheet takes that line, then
-# its header, then one line per record.
-_FF_LINE = 1
+from text_spreadsheet import _field
+
+_FF = "\f"
+_LF = "\n"
+_SIGNATURE = "﻿"
+
+_YES = "yes"
+_NO = "no"
 
 
 def of(
-    sheets: list[dict[str, Any]],
-    source: Path,
-    stored: Path,
-    converted: bool,
-    left_behind: list[str],
+    group: list[dict[str, Any]], selection: list[dict[str, Any]]
 ) -> list[dict[str, Any]]:
-    """Return the map of a file as MTSV sheets.
+    """Return the map of a selection as MTSV sheets.
 
-    sheets -- the sheets the file holds
-    source -- the path that was read
-    stored -- the path of the MTSV copy
-    converted -- whether this call converted the file
-    left_behind -- the names the conversion reported, as reported
+    group -- the files of the call, as the input named them
+    selection -- the sheets of the call, as they were selected
 
     Return four sheets: file, sheets, columns and left behind.
     """
+    lines = {file["file"]: _lines(file["text"]) for file in group}
     return [
-        _file(source, stored, converted),
-        _sheets(sheets),
-        _columns(sheets),
-        _left_behind(left_behind),
+        _files(group),
+        _sheets(selection, lines),
+        _columns(selection),
+        _left_behind(group),
     ]
 
 
-def _file(source: Path, stored: Path, converted: bool) -> dict[str, Any]:
-    """Return the sheet naming the file and its copy."""
+def _files(group: list[dict[str, Any]]) -> dict[str, Any]:
+    """Return the sheet naming each file, its artifact, and its status.
+
+    group -- the files of the call
+
+    A file with no artifact has an empty field. CSVW, 4.5 Cells: an
+    empty string value is read as null.
+    """
     return {
         "sheet name": "file",
-        "header": ["source", "artifact", "converted"],
-        "records": [[str(source), str(stored), "yes" if converted else "no"]],
+        "header": ["file", "source", "artifact", "converted", "status"],
+        "records": [
+            [
+                str(file["file"]),
+                _field.written(str(file["source"])),
+                (
+                    ""
+                    if file["artifact"] is None
+                    else _field.written(str(file["artifact"]))
+                ),
+                _YES if file["converted"] else _NO,
+                file["status"],
+            ]
+            for file in group
+        ],
     }
 
 
-def _sheets(sheets: list[dict[str, Any]]) -> dict[str, Any]:
-    """Return the sheet naming each sheet, its records and its lines.
+def _sheets(
+    selection: list[dict[str, Any]], lines: dict[int, list[tuple[int, int]]]
+) -> dict[str, Any]:
+    """Return the sheet naming each sheet, its counts, and its lines.
 
-    The draft, Data Model: a sheet is a header and an ordered sequence
-    of records, so how many records it holds is what the rows address
-    counts.
+    selection -- the sheets of the call
+    lines -- the first and last line of each sheet, by file
+
+    CSVW, 4.4 Rows: a row has a number among the rows selected and a
+    source number in the original; records counts the sheet, matches
+    what the condition keeps.
     """
-    rows = []
-    line = 1
-    for number, sheet in enumerate(sheets, 1):
-        last = line + _FF_LINE + _lines(sheet) - 1
-        rows.append(
+    records = []
+    for entry in selection:
+        first, last = lines[entry["file"]][entry["position in file"] - 1]
+        records.append(
             [
-                str(number),
-                sheet["sheet name"],
-                str(len(sheet["records"])),
-                str(line),
+                str(entry["sheet"]),
+                str(entry["file"]),
+                entry["part"]["sheet name"],
+                str(entry["records"]),
+                str(entry["matches"]),
+                str(first),
                 str(last),
             ]
         )
-        line = last + 1
     return {
         "sheet name": "sheets",
-        "header": ["sheet", "sheet name", "records", "first line", "last line"],
-        "records": rows,
+        "header": [
+            "sheet",
+            "file",
+            "sheet name",
+            "records",
+            "matches",
+            "first line",
+            "last line",
+        ],
+        "records": records,
     }
 
 
-def _columns(sheets: list[dict[str, Any]]) -> dict[str, Any]:
-    """Return the sheet naming each column and its position."""
+def _columns(selection: list[dict[str, Any]]) -> dict[str, Any]:
+    """Return the sheet naming each column and its position.
+
+    selection -- the sheets of the call
+    """
     records = []
-    for number, sheet in enumerate(sheets, 1):
-        for position, name in enumerate(sheet["header"] or [], 1):
-            records.append([str(number), str(position), name])
+    for entry in selection:
+        for position, name in enumerate(entry["part"]["header"] or [], 1):
+            records.append([str(entry["sheet"]), str(position), name])
     return {
         "sheet name": "columns",
         "header": ["sheet", "position", "field name"],
@@ -90,17 +122,38 @@ def _columns(sheets: list[dict[str, Any]]) -> dict[str, Any]:
     }
 
 
-def _left_behind(names: list[str]) -> dict[str, Any]:
-    """Return the sheet naming what the conversion left behind."""
+def _left_behind(group: list[dict[str, Any]]) -> dict[str, Any]:
+    """Return the sheet naming what each conversion left behind.
+
+    group -- the files of the call
+
+    CSVW, 4.2 Tables: notes are annotations on the table they concern.
+    """
     return {
         "sheet name": "left behind",
-        "header": ["what"],
-        "records": [[name] for name in names],
+        "header": ["file", "what"],
+        "records": [
+            [str(file["file"]), name] for file in group for name in file["left behind"]
+        ],
     }
 
 
-def _lines(sheet: dict[str, Any]) -> int:
-    """Return how many lines a sheet takes after its FF line."""
-    if sheet["header"] is None:
-        return 0
-    return 1 + len(sheet["records"])
+def _lines(text: str) -> list[tuple[int, int]]:
+    """Return the first and last line of each sheet in an MTSV text.
+
+    text -- the MTSV text of one file
+
+    The draft, Parsers: the lines before the first FF, if any, are the
+    first sheet, and each line that begins with an FF starts a new
+    sheet; a U+FEFF at the start of a file is an encoding signature.
+    """
+    lines = text.split(_LF)
+    if lines and lines[-1] == "":
+        lines.pop()
+    if lines:
+        lines[0] = lines[0].removeprefix(_SIGNATURE)
+    starts = [n for n, line in enumerate(lines, 1) if line.startswith(_FF)]
+    if lines and not lines[0].startswith(_FF):
+        starts.insert(0, 1)
+    ends = [start - 1 for start in starts[1:]] + [len(lines)]
+    return list(zip(starts, ends))
