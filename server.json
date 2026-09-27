@@ -2,7 +2,7 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.demos-ra/text-spreadsheet",
   "title": "Text Spreadsheet",
-  "description": "Let your AI read a whole spreadsheet as tab-separated text — Excel, ODS, SQLite and more",
+  "description": "Read and filter Excel, CSV, ODS, SQLite, Parquet and MTSV files — or a folder — as plain text",
   "version": "0.3.0",
   "packages": [
     {

@@ -5,13 +5,26 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "text-spreadsheet"
 version = "0.3.0"
-description = "Let your AI read a whole spreadsheet as tab-separated text — Excel, ODS, SQLite and more"
+description = "Read and filter Excel, CSV, ODS, SQLite, Parquet and MTSV files — or a folder — as plain text"
 readme = "README.md"
 requires-python = ">=3.11"
 license = "MIT"
 license-files = ["LICENSE"]
 authors = [{ name = "Demos Ra", email = "demos_ra@hotmail.com" }]
-keywords = ["mcp", "spreadsheet", "excel", "ods", "sqlite", "parquet", "mtsv"]
+keywords = [
+    "mcp",
+    "ai",
+    "spreadsheet",
+    "filter",
+    "excel",
+    "ods",
+    "csv",
+    "json",
+    "sqlite",
+    "parquet",
+    "arrow",
+    "mtsv",
+]
 dependencies = ["mtsv[arrow]>=0.6", "platformdirs", "mcp", "jsonpath-rfc9535>=1.0"]
 
 [project.scripts]
