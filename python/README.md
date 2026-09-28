@@ -111,11 +111,12 @@ the map with its status, and so is a subfolder, or anything else that
 is not a regular file, as skipped; the others are still read.
 
 The path must be absolute. A file named directly that cannot be read
-or converted, or whose extension names no format, a folder that cannot
-be listed, and an address or filter not written as its syntax writes
-one are each refused with the reason. A file that holds a tab or line
-break inside a value cannot be converted, as MTSV cannot hold one:
-named directly, it is refused, and in a folder it is named as failed.
+or converted, or whose extension names no format, a path that names
+neither a folder nor a regular file, a folder that cannot be listed,
+and an address or filter not written as its syntax writes one are each
+refused with the reason. A file that holds a tab or line break inside a
+value cannot be converted, as MTSV cannot hold one: named directly, it
+is refused, and in a folder it is named as failed.
 
 ## What is kept
 

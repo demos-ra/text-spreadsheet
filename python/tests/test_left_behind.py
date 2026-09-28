@@ -1,6 +1,7 @@
 """Test text_spreadsheet._left_behind against mtsv's report."""
 
 import logging
+import threading
 import unittest
 
 from text_spreadsheet import _left_behind
@@ -39,6 +40,19 @@ class TestCollect(unittest.TestCase):
         """A record with no names of its own adds none."""
         with _left_behind.collect() as names:
             logging.getLogger(LOGGER).warning("something else")
+        self.assertEqual(names, [])
+
+    def test_another_threads_report(self):
+        """A report made in another thread is that thread's call's."""
+        logger = logging.getLogger(LOGGER)
+        with _left_behind.collect() as names:
+            thread = threading.Thread(
+                target=logger.warning,
+                args=("z",),
+                kwargs={"extra": {"left_behind": ["z"]}},
+            )
+            thread.start()
+            thread.join()
         self.assertEqual(names, [])
 
     def test_the_handler_is_removed(self):

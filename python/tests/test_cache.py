@@ -2,6 +2,7 @@
 
 import os
 import tempfile
+import threading
 import unittest
 from pathlib import Path
 from unittest import mock
@@ -48,11 +49,6 @@ class TestArtifact(unittest.TestCase):
         for name, path in zip(names, paths):
             with self.subTest(name):
                 self.assertEqual(path.name, name + ".mtsv")
-
-    def test_relative_path_refused(self):
-        """A path that is not absolute raises ValueError."""
-        with self.assertRaises(ValueError):
-            _cache.artifact(Path("book.xlsx"))
 
 
 class TestStoreAndLoad(unittest.TestCase):
@@ -111,8 +107,8 @@ class TestStoreAndLoad(unittest.TestCase):
                 ["book.xlsx.mtsv", "book.xlsx.mtsv-metadata.mtsv"],
             )
 
-    def test_working_name_is_the_process(self):
-        """POSIX 1.4: two processes write under two working names."""
+    def test_working_name_is_the_process_and_thread(self):
+        """POSIX 1.4: two writers write under two working names."""
         with tempfile.TemporaryDirectory() as directory:
             stored = Path(directory, "book.xlsx.mtsv")
             written = []
@@ -124,11 +120,36 @@ class TestStoreAndLoad(unittest.TestCase):
 
             with mock.patch.object(Path, "write_bytes", spy):
                 with mock.patch("os.getpid", return_value=7):
-                    _cache.store(stored, TEXT, [])
+                    with mock.patch("threading.get_ident", return_value=3):
+                        _cache.store(stored, TEXT, [])
             self.assertEqual(
                 written,
-                ["book.xlsx.mtsv-metadata.mtsv.7.part", "book.xlsx.mtsv.7.part"],
+                [
+                    "book.xlsx.mtsv-metadata.mtsv.7.3.part",
+                    "book.xlsx.mtsv.7.3.part",
+                ],
             )
+
+    def test_threads_store_one_copy(self):
+        """Calls in threads of one process each keep the copy whole."""
+        with tempfile.TemporaryDirectory() as directory:
+            stored = Path(directory, "book.xlsx.mtsv")
+            text = TEXT + "Ada\n" * 100000
+            errors = []
+
+            def store():
+                try:
+                    _cache.store(stored, text, [])
+                except OSError as error:
+                    errors.append(error)
+
+            threads = [threading.Thread(target=store) for _ in range(8)]
+            for thread in threads:
+                thread.start()
+            for thread in threads:
+                thread.join()
+            self.assertEqual(errors, [])
+            self.assertEqual(_cache.load(stored), (text, []))
 
 
 class TestIsFresh(unittest.TestCase):

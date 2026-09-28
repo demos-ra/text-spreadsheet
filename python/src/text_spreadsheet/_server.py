@@ -88,9 +88,10 @@ def read(
     I-Regexp: [0-9], not \\d, and a backslash written twice.
 
     The path must be absolute. A file named directly that cannot be
-    read or converted, a folder that cannot be listed, an extension
-    this server has no format for, and an address or filter not
-    written as its syntax writes one are each refused with the reason.
+    read or converted, a path that names neither a folder nor a regular
+    file, a folder that cannot be listed, an extension this server has
+    no format for, and an address or filter not written as its syntax
+    writes one are each refused with the reason.
     A file holding a tab or line break inside a value cannot be
     converted.
 

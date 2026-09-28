@@ -66,6 +66,12 @@ class TestPath(Folder):
         with self.assertRaises(_refusal.OSRefusalError):
             _input.of(str(self.folder / "absent.xlsx"))
 
+    def test_not_a_regular_file_refused(self):
+        """A path naming neither a regular file nor a folder is refused."""
+        os.mkfifo(self.folder / "pipe.mtsv")
+        with self.assertRaises(_refusal.OSRefusalError):
+            _input.of(str(self.folder / "pipe.mtsv"))
+
 
 class TestFolder(Folder):
     """of: the members of a folder."""

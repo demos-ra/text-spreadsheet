@@ -11,6 +11,7 @@ __all__ = ["artifact", "is_fresh", "store", "load"]
 
 import io
 import os
+import threading
 from pathlib import Path
 
 import mtsv
@@ -30,8 +31,10 @@ _LEFT_BEHIND = "left behind"
 _WHAT = "what"
 
 # POSIX.1-2017 XCU 1.4, OUTPUT FILES: temporary files are named so that
-# multiple instances can operate simultaneously, by process ID.
-_WORKING = ".{pid}.part"
+# multiple instances can operate simultaneously, by process ID. MCP
+# Python SDK, Tools: a plain function runs in a thread, so calls of one
+# process are named by their thread too.
+_WORKING = ".{pid}.{thread}.part"
 
 
 def artifact(source: Path) -> Path:
@@ -40,12 +43,9 @@ def artifact(source: Path) -> Path:
     source -- the absolute path of a file to convert
 
     Return the path under the cache directory, the source path with the
-    MTSV extension added to its whole name. Raise ValueError for a path
-    that is not absolute. RFC 9111, 2: the cache key is the target URI,
-    here the source path.
+    MTSV extension added to its whole name. RFC 9111, 2: the cache key
+    is the target URI, here the source path.
     """
-    if not source.is_absolute():
-        raise ValueError(f"the path of a source file is absolute: {source}")
     mirrored = Path(*source.parts[1:])
     named = mirrored.with_name(mirrored.name + MTSV)
     return Path(user_cache_dir(_APPNAME, appauthor=False)) / named
@@ -130,7 +130,9 @@ def _write(path: Path, data: bytes) -> None:
     on exit because of errors.
     """
     path.parent.mkdir(parents=True, exist_ok=True)
-    working = path.with_name(path.name + _WORKING.format(pid=os.getpid()))
+    working = path.with_name(
+        path.name + _WORKING.format(pid=os.getpid(), thread=threading.get_ident())
+    )
     try:
         working.write_bytes(data)
         working.replace(path)

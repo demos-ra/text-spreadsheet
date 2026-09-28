@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "text-spreadsheet"
-version = "0.4.0"
+version = "0.4.1"
 description = "Read and filter Excel, CSV, ODS, SQLite, Parquet and MTSV files — or a folder — as plain text"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -25,7 +25,7 @@ keywords = [
     "arrow",
     "mtsv",
 ]
-dependencies = ["mtsv[arrow]>=0.6", "platformdirs", "mcp", "jsonpath-rfc9535>=1.0"]
+dependencies = ["mtsv[arrow]>=0.6", "platformdirs", "mcp>=2.2", "jsonpath-rfc9535>=1.0"]
 
 [project.scripts]
 text-spreadsheet = "text_spreadsheet.__main__:main"

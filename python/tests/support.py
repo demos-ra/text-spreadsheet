@@ -2,6 +2,8 @@
 
 Objects:
 CACHE -- the cache directory of the test run, a temporary folder
+user_cache_dir -- platformdirs' user_cache_dir as the tests patch it,
+    returning CACHE
 """
 
 import atexit

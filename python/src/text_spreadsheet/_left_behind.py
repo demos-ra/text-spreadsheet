@@ -1,12 +1,13 @@
 """What an integration reported as left behind, as it reported it.
 
 Functions:
-collect -- collect the names mtsv leaves behind while its body runs
+collect -- collect the names mtsv leaves behind in this thread
 """
 
 __all__ = ["collect"]
 
 import logging
+import threading
 from contextlib import contextmanager
 from typing import Iterator
 
@@ -19,14 +20,15 @@ _ATTRIBUTE = "left_behind"
 
 @contextmanager
 def collect() -> Iterator[list[str]]:
-    """Collect the names mtsv leaves behind while its body runs.
+    """Collect the names mtsv leaves behind in this thread.
 
     Yield the list, which is filled as the body runs and is complete
-    once it ends.
+    once it ends. MCP Python SDK, Tools: a plain function runs in a
+    thread, so a report made in another thread is another call's.
     """
     names: list[str] = []
     logger = logging.getLogger(_LOGGER)
-    handler = _Names(names)
+    handler = _Names(names, threading.get_ident())
     logger.addHandler(handler)
     try:
         yield names
@@ -35,19 +37,22 @@ def collect() -> Iterator[list[str]]:
 
 
 class _Names(logging.Handler):
-    """A handler that keeps the names a record carries."""
+    """A handler that keeps the names a record of one thread carries."""
 
-    def __init__(self, names: list[str]) -> None:
-        """Keep the list the names are added to.
+    def __init__(self, names: list[str], thread: int) -> None:
+        """Keep the list the names are added to, and whose they are.
 
         names -- the list
+        thread -- the thread whose reports are kept
         """
         super().__init__()
         self.names = names
+        self.thread = thread
 
     def emit(self, record: logging.LogRecord) -> None:
-        """Add the names of one report to the list.
+        """Add the names a report carries, if it is this thread's.
 
         record -- one report
         """
-        self.names.extend(getattr(record, _ATTRIBUTE, ()))
+        if threading.get_ident() == self.thread:
+            self.names.extend(getattr(record, _ATTRIBUTE, ()))

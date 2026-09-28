@@ -34,7 +34,8 @@ def of(path: str) -> list[dict[str, Any]]:
     from 1, its source, its status, and what its conversion gives. A
     member that is not a regular file is skipped. Raise
     ValueRefusalError for a path that is not absolute, and
-    OSRefusalError for a folder that cannot be listed; and, for a file
+    OSRefusalError for a folder that cannot be listed or a path that
+    names neither a folder nor a regular file; and, for a file
     named directly, OSRefusalError where it cannot be read,
     LookupRefusalError where its extension names no format, and
     ValueRefusalError where it cannot be converted.
@@ -46,6 +47,8 @@ def of(path: str) -> list[dict[str, Any]]:
         )
     if source.is_dir():
         return [_member(n, one) for n, one in enumerate(_members(source), 1)]
+    if source.exists() and not source.is_file():
+        raise _refusal.OSRefusalError(f"not a regular file: {source}")
     return [_file(1, source)]
 
 
