@@ -1,5 +1,6 @@
 """Test text_spreadsheet._input against POSIX and CSVW."""
 
+import os
 import shutil
 import tempfile
 import unittest
@@ -76,13 +77,30 @@ class TestFolder(Folder):
         names = [file["source"].name for file in _input.of(str(self.folder))]
         self.assertEqual(names, ["B.mtsv", "a.mtsv", "b.mtsv", "é.mtsv"])
 
-    def test_hidden_and_subfolders_left_out(self):
-        """A name beginning with "." and a subfolder are not members."""
+    def test_hidden_left_out(self):
+        """POSIX 2.13.3: a name beginning with "." is not a member."""
         self.write("a.mtsv")
         self.write(".hidden.mtsv")
-        (self.folder / "sub").mkdir()
         names = [file["source"].name for file in _input.of(str(self.folder))]
         self.assertEqual(names, ["a.mtsv"])
+
+    def test_a_subfolder_is_skipped(self):
+        """A subfolder is named, skipped, and not read."""
+        self.write("a.mtsv")
+        (self.folder / "sub").mkdir()
+        self.write("sub/b.mtsv")
+        group = _input.of(str(self.folder))
+        self.assertEqual(
+            [(file["source"].name, file["status"]) for file in group],
+            [("a.mtsv", "read"), ("sub", "skipped: subfolder")],
+        )
+        self.assertEqual(group[1]["sheets"], [])
+
+    def test_not_a_regular_file_is_skipped(self):
+        """A FIFO is named, skipped, and not read."""
+        os.mkfifo(self.folder / "pipe.mtsv")
+        file = _input.of(str(self.folder))[0]
+        self.assertEqual(file["status"], "skipped: not a regular file")
 
     def test_a_link_is_followed(self):
         """A symbolic link names the file it points to."""

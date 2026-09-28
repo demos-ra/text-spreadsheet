@@ -173,6 +173,12 @@ class TestFolder(Folder):
         text = read(str(self.folder), fields="2")
         self.assertEqual([sheet["header"] for sheet in mtsv.loads(text)], [["b"], None])
 
+    def test_a_folder_of_folders(self):
+        """A folder holding only subfolders names them as skipped."""
+        (self.folder / "2026").mkdir()
+        record = named(read(str(self.folder)), "file")["records"][0]
+        self.assertEqual((record[0], record[4]), ("1", "skipped: subfolder"))
+
     def test_an_empty_folder(self):
         """A folder with no sheets still returns its map."""
         self.assertEqual(named(read(str(self.folder)), "sheets")["records"], [])

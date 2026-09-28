@@ -76,15 +76,16 @@ def read(
 
     A folder is read without its subfolders and without names that
     begin with a dot, in name order; its sheets are numbered across
-    its files. A file with no format, or one that cannot be read, is
-    named in the map, and the others are still read.
+    its files. A file with no format, or one that cannot be read, and
+    a subfolder or anything else that is not a regular file, skipped,
+    are named in the map, and the others are still read.
 
     Positions that do not exist are left out, and a sheet left with no
     field comes back empty. rows counts the records the filter keeps.
-    In a filter, @[0] is a record's first field; text is compared
-    exactly; match() tests a whole field and search() any part of it,
-    with patterns in I-Regexp: [0-9], not \\d, and a backslash written
-    twice.
+    In a filter, @[0] is a record's first field, the same position in
+    every sheet the call chooses; text is compared exactly; match()
+    tests a whole field and search() any part of it, with patterns in
+    I-Regexp: [0-9], not \\d, and a backslash written twice.
 
     The path must be absolute. A file named directly that cannot be
     read or converted, a folder that cannot be listed, an extension

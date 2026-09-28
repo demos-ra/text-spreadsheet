@@ -18,6 +18,9 @@ _HIDDEN = "."
 
 _READ = "read"
 _NO_FORMAT = "no format"
+_SKIPPED = "skipped: {}"
+_SUBFOLDER = "subfolder"
+_NOT_A_REGULAR_FILE = "not a regular file"
 _FAILED = "failed: {}"
 _NAME_CANNOT_BE_WRITTEN = "name cannot be written"
 
@@ -27,12 +30,14 @@ def of(path: str) -> list[dict[str, Any]]:
 
     path -- the absolute path of a file or a folder
 
-    Return one entry per file: its position from 1, its source, its
-    status, and what its conversion gives. Raise ValueRefusalError for a
-    path that is not absolute, and OSRefusalError for a folder that
-    cannot be listed; and, for a file named directly, OSRefusalError
-    where it cannot be read, LookupRefusalError where its extension
-    names no format, and ValueRefusalError where it cannot be converted.
+    Return one entry per file, or per member of a folder: its position
+    from 1, its source, its status, and what its conversion gives. A
+    member that is not a regular file is skipped. Raise
+    ValueRefusalError for a path that is not absolute, and
+    OSRefusalError for a folder that cannot be listed; and, for a file
+    named directly, OSRefusalError where it cannot be read,
+    LookupRefusalError where its extension names no format, and
+    ValueRefusalError where it cannot be converted.
     """
     source = Path(path)
     if not source.is_absolute():
@@ -45,29 +50,30 @@ def of(path: str) -> list[dict[str, Any]]:
 
 
 def _members(folder: Path) -> list[Path]:
-    """Return the files a folder holds, from one listing, in order.
+    """Return the members of a folder, from one listing, in order.
 
     folder -- the absolute path of a folder
 
     POSIX.1-2017 XSH readdir: whether a file added or removed during a
-    listing is returned is unspecified. XCU 2.13.3, rule 3: names are
-    sorted by the collating sequence, in the POSIX locale byte by byte.
-    Raise OSRefusalError where the folder cannot be listed.
+    listing is returned is unspecified. XCU 2.13.3, rule 3: the pattern
+    is replaced with the existing filenames it matches, sorted by the
+    collating sequence, in the POSIX locale byte by byte. Raise
+    OSRefusalError where the folder cannot be listed.
     """
     try:
         with os.scandir(folder) as entries:
-            files = [
+            members = [
                 Path(entry.path)
                 for entry in entries
-                if not entry.name.startswith(_HIDDEN) and entry.is_file()
+                if not entry.name.startswith(_HIDDEN)
             ]
     except OSError as error:
         raise _refusal.of(error) from error
-    return sorted(files, key=lambda one: os.fsencode(one.name))
+    return sorted(members, key=lambda one: os.fsencode(one.name))
 
 
 def _member(position: int, source: Path) -> dict[str, Any]:
-    """Return the entry of a file in a folder, naming a failure.
+    """Return a member's entry, naming a skip or a failure.
 
     position -- its position in the folder, from 1
     source -- its absolute path
@@ -76,6 +82,10 @@ def _member(position: int, source: Path) -> dict[str, Any]:
     cannot be performed on a file in a hierarchy, processing continues
     with the remaining files.
     """
+    if source.is_dir():
+        return _entry(position, source, _SKIPPED.format(_SUBFOLDER))
+    if not source.is_file():
+        return _entry(position, source, _SKIPPED.format(_NOT_A_REGULAR_FILE))
     try:
         return _file(position, source)
     except _refusal.LookupRefusalError:
@@ -108,8 +118,8 @@ def _entry(
 
     position -- its position in the group, from 1
     source -- its absolute path
-    status -- read, no format, or failed and the reason, as a field
-        holds it
+    status -- read, no format, skipped and what, or failed and the
+        reason, as a field holds it
     converted -- what its conversion gives, or None where there is none
     """
     if converted is None:

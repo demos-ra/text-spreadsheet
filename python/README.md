@@ -91,7 +91,8 @@ not written that way is refused.
 
 A filter keeps the records whose fields meet a condition, written as
 an [RFC 9535](https://www.rfc-editor.org/rfc/rfc9535.html) filter:
-`@[0]` is a record's first field.
+`@[0]` is a record's first field, the same position in every sheet a
+call chooses.
 
 ```
 read("/home/me/book.xlsx", filter="@[2] == 'open'")
@@ -101,16 +102,20 @@ read("/home/me/book.xlsx", sheet="2", rows="1-50", filter="search(@[1], 'Ltd')")
 With no position, the map counts the matches of each sheet; with one,
 `rows` counts the records the filter keeps. Text is compared exactly,
 and patterns are [I-Regexp](https://www.rfc-editor.org/rfc/rfc9485.html):
-`[0-9]`, not `\d`.
+`[0-9]`, not `\d`, with a backslash in a pattern written twice.
 
 A folder is read without its subfolders and without names that begin
 with a dot, in name order, and its sheets are numbered across its
 files. A file with no format, or one that cannot be read, is named in
-the map with its status, and the others are still read.
+the map with its status, and so is a subfolder, or anything else that
+is not a regular file, as skipped; the others are still read.
 
-A file that holds a tab or line break inside a value cannot be
-converted, as MTSV cannot hold one: named directly, it is refused with
-the reason, and in a folder it is named as failed.
+The path must be absolute. A file named directly that cannot be read
+or converted, or whose extension names no format, a folder that cannot
+be listed, and an address or filter not written as its syntax writes
+one are each refused with the reason. A file that holds a tab or line
+break inside a value cannot be converted, as MTSV cannot hold one:
+named directly, it is refused, and in a folder it is named as failed.
 
 ## What is kept
 
@@ -123,6 +128,8 @@ call reads that copy unless the file has changed since, and the map
 names where it is, so it can also be read directly. A copy that cannot
 be written, as on a full disk, is skipped: the read goes on, and the
 map names no copy. An MTSV file is read where it is, and not copied.
+The tool removes no copy: the cache is yours to manage, and anything
+in it can be deleted.
 
 Nothing else is kept, and nothing outside this machine is contacted.
 
