@@ -99,6 +99,25 @@ class TestFields(unittest.TestCase):
         """A sheet with no lines has no field, and stays empty."""
         self.assertEqual(parts(_selection.of(GROUP, sheet="2", fields="1")), [B])
 
+    def test_no_field_named(self):
+        """The draft, Data Model: a sheet left no field is empty."""
+        self.assertEqual(
+            parts(_selection.of(GROUP, sheet="3", fields="2")),
+            [{"sheet name": "C", "header": None, "records": []}],
+        )
+
+    def test_sheets_of_two_widths(self):
+        """Each sheet keeps the fields it has; the counts stay."""
+        selection = _selection.of(GROUP, sheet="1;3", fields="2-3")
+        self.assertEqual(
+            parts(selection),
+            [
+                {"sheet name": "A", "header": ["b", "c"], "records": [["2", "3"]]},
+                {"sheet name": "C", "header": None, "records": []},
+            ],
+        )
+        self.assertEqual(selection[1]["records"], 3)
+
     def test_the_condition_sees_the_whole_record(self):
         """fields cuts after the condition has seen every field."""
         selection = _selection.of(

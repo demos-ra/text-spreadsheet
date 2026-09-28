@@ -2,7 +2,7 @@
 
 import unittest
 
-from text_spreadsheet import _filter
+from text_spreadsheet import _filter, _refusal
 
 RECORDS = [
     ["Paul", "23", "1115 W Franklin"],
@@ -79,12 +79,12 @@ class TestRefused(unittest.TestCase):
         """RFC 9535, 2.1: a query that is not well-formed is refused."""
         for filter in ("@[0] = 'x'", "", "@[0] ==", "("):
             with self.subTest(filter):
-                with self.assertRaises(ValueError):
+                with self.assertRaises(_refusal.ValueRefusalError):
                     _filter.compile(filter)
 
     def test_one_filter_selector(self):
         """RFC 9535, 4.2: a filter cannot add a selector."""
         for filter in ("@[0] == 'x', 0", "@[0] == 'x'].a[?true"):
             with self.subTest(filter):
-                with self.assertRaises(ValueError):
+                with self.assertRaises(_refusal.ValueRefusalError):
                     _filter.compile(filter)

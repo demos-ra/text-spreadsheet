@@ -126,6 +126,14 @@ class TestValues(Folder):
         text = read(str(path), sheet="1", rows="2", filter="@[1] == '2'")
         self.assertEqual(mtsv.loads(text)[0]["records"], [["5", "2"]])
 
+    def test_fields_past_the_width(self):
+        """A sheet left with no field comes back empty, as MTSV."""
+        path = self.write("book.xlsx")
+        self.assertEqual(
+            mtsv.loads(read(str(path), sheet="1", fields="2")),
+            [{"sheet name": "People", "header": None, "records": []}],
+        )
+
     def test_a_sheet_that_does_not_exist(self):
         """A sheet the file does not have is left out."""
         path = self.write("book.xlsx")
@@ -157,6 +165,13 @@ class TestFolder(Folder):
         self.write("a.mtsv")
         self.write("b.mtsv", OTHER)
         self.assertEqual(mtsv.loads(read(str(self.folder), sheet="2")), OTHER)
+
+    def test_fields_across_widths(self):
+        """Each sheet of the group keeps the fields it has."""
+        self.write("a.mtsv", WIDE)
+        self.write("b.mtsv")
+        text = read(str(self.folder), fields="2")
+        self.assertEqual([sheet["header"] for sheet in mtsv.loads(text)], [["b"], None])
 
     def test_an_empty_folder(self):
         """A folder with no sheets still returns its map."""

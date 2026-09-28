@@ -4,17 +4,19 @@ import shutil
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 import mtsv
 from mtsv.integrations import xlsx
 
-from text_spreadsheet import _cache, _conversion
+from text_spreadsheet import _cache, _conversion, _refusal
 
 import support
 
 SHEETS = [{"sheet name": "People", "header": ["Name"], "records": [["Ada"]]}]
 LEAVES_BEHIND = b'[{"sheet name":"","header":["a"],"records":[],"x":1}]'
 LEAVES_A_TAB = b'[{"sheet name":"","header":["a"],"records":[],"x\\ty":1}]'
+HOLDS_A_LINE_BREAK = b'[{"sheet name":"","header":["a"],"records":[["b\\nc"]]}]'
 
 
 class Folder(unittest.TestCase):
@@ -84,12 +86,38 @@ class TestOf(Folder):
         again = _conversion.of(path)
         self.assertEqual((again["converted"], again["sheets"]), (True, SHEETS))
 
+    def test_a_copy_that_cannot_be_written(self):
+        """XDG, Basics: the read goes on, and no artifact is named."""
+        path = self.write("book.xlsx")
+        with mock.patch("text_spreadsheet._cache.store", side_effect=OSError("full")):
+            converted = _conversion.of(path)
+        self.assertEqual(
+            (converted["artifact"], converted["converted"], converted["sheets"]),
+            (None, True, SHEETS),
+        )
+
+
+class TestRefused(Folder):
+    """of: a file that cannot be read or converted."""
+
     def test_no_format(self):
-        """An extension that names no format raises LookupError."""
-        with self.assertRaises(LookupError):
+        """An extension that names no format, as LookupError."""
+        with self.assertRaises(_refusal.LookupRefusalError):
             _conversion.of(self.write("book.txt", b"a\n"))
 
+    def test_absent(self):
+        """A file that does not exist, as OSError."""
+        for name in ("absent.xlsx", "absent.mtsv"):
+            with self.subTest(name):
+                with self.assertRaises(_refusal.OSRefusalError):
+                    _conversion.of(self.folder / name)
+
     def test_not_mtsv(self):
-        """An MTSV file that is not MTSV raises ValueError."""
-        with self.assertRaises(ValueError):
+        """An MTSV file that is not MTSV, as ValueError."""
+        with self.assertRaises(_refusal.ValueRefusalError):
             _conversion.of(self.write("book.mtsv", b"a\tb\nc\n"))
+
+    def test_a_value_mtsv_cannot_hold(self):
+        """mtsv, What is left behind: a line break in a value raises."""
+        with self.assertRaises(_refusal.ValueRefusalError):
+            _conversion.of(self.write("book.json", HOLDS_A_LINE_BREAK))

@@ -137,37 +137,27 @@ class TestIsFresh(unittest.TestCase):
     def test_no_copy(self):
         """A copy that does not exist is not fresh."""
         with tempfile.TemporaryDirectory() as directory:
-            source = Path(directory, "book.xlsx")
-            source.write_bytes(b"")
             stored = Path(directory, "book.xlsx.mtsv")
-            self.assertFalse(_cache.is_fresh(source, stored))
+            self.assertFalse(_cache.is_fresh(stored, 0))
 
     def test_copy_newer(self):
         """A copy newer than its source, with metadata, is fresh."""
         with tempfile.TemporaryDirectory() as directory:
-            source = Path(directory, "book.xlsx")
-            source.write_bytes(b"")
             stored = Path(directory, "book.xlsx.mtsv")
             _cache.store(stored, TEXT, [])
-            os.utime(source, (0, 0))
-            self.assertTrue(_cache.is_fresh(source, stored))
+            self.assertTrue(_cache.is_fresh(stored, 0))
 
     def test_copy_without_metadata(self):
         """A copy without its metadata is not fresh."""
         with tempfile.TemporaryDirectory() as directory:
-            source = Path(directory, "book.xlsx")
-            source.write_bytes(b"")
             stored = Path(directory, "book.xlsx.mtsv")
             stored.write_bytes(b"")
-            os.utime(source, (0, 0))
-            self.assertFalse(_cache.is_fresh(source, stored))
+            self.assertFalse(_cache.is_fresh(stored, 0))
 
     def test_source_newer(self):
         """A source changed after its copy is stale."""
         with tempfile.TemporaryDirectory() as directory:
-            source = Path(directory, "book.xlsx")
-            source.write_bytes(b"")
             stored = Path(directory, "book.xlsx.mtsv")
             _cache.store(stored, TEXT, [])
             os.utime(stored, (0, 0))
-            self.assertFalse(_cache.is_fresh(source, stored))
+            self.assertFalse(_cache.is_fresh(stored, 1))

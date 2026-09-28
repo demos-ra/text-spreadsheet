@@ -6,6 +6,7 @@ import tempfile
 import unittest
 from importlib.metadata import version
 from pathlib import Path
+from unittest import mock
 
 import mtsv
 from mcp.server.mcpserver.exceptions import ToolError, UnexpectedToolError
@@ -101,6 +102,14 @@ class TestRead(unittest.TestCase):
             asyncio.run(_server.mcp.call_tool("read", {"path": "x"}))
         self.assertNotIsInstance(caught.exception, UnexpectedToolError)
         self.assertIn("absolute", str(caught.exception))
+
+    def test_a_fault_is_not_a_refusal(self):
+        """An error that is not a refusal is not given a reason."""
+        for error in (KeyError("k"), ValueError("v")):
+            with self.subTest(type(error).__name__):
+                with mock.patch("text_spreadsheet.read", side_effect=error):
+                    with self.assertRaises(type(error)):
+                        _server.read("/a.xlsx")
 
     def test_an_address_names_a_part(self):
         """An address gives that part of the file, not the map."""

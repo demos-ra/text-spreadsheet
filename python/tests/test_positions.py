@@ -2,7 +2,7 @@
 
 import unittest
 
-from text_spreadsheet import _positions
+from text_spreadsheet import _positions, _refusal
 
 
 class TestSyntax(unittest.TestCase):
@@ -31,7 +31,7 @@ class TestSyntax(unittest.TestCase):
         """Anything not written as the syntax writes it is refused."""
         for address in ("a", "", "1-", "-1", "1,2", "1-2-3", "1 2", "**"):
             with self.subTest(address):
-                with self.assertRaises(ValueError):
+                with self.assertRaises(_refusal.ValueRefusalError):
                     _positions.of(address, 5)
 
 

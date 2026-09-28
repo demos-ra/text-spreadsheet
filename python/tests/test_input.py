@@ -4,10 +4,11 @@ import shutil
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 import mtsv
 
-from text_spreadsheet import _cache, _input
+from text_spreadsheet import _cache, _input, _refusal
 
 import support
 
@@ -43,8 +44,8 @@ class TestPath(Folder):
     """of: what a path names."""
 
     def test_relative_refused(self):
-        """A path that is not absolute raises ValueError."""
-        with self.assertRaises(ValueError):
+        """A path that is not absolute is refused, as ValueError."""
+        with self.assertRaises(_refusal.ValueRefusalError):
             _input.of("book.mtsv")
 
     def test_a_file(self):
@@ -55,13 +56,13 @@ class TestPath(Folder):
         )
 
     def test_no_format_refused(self):
-        """A file named directly, of no format, stops."""
-        with self.assertRaises(LookupError):
+        """A file named directly, of no format, is refused."""
+        with self.assertRaises(_refusal.LookupRefusalError):
             _input.of(str(self.write("book.txt", b"a\n")))
 
     def test_unreadable_refused(self):
-        """A file named directly that does not exist stops."""
-        with self.assertRaises(OSError):
+        """A file named directly that does not exist is refused."""
+        with self.assertRaises(_refusal.OSRefusalError):
             _input.of(str(self.folder / "absent.xlsx"))
 
 
@@ -100,6 +101,13 @@ class TestFolder(Folder):
             [file["status"].split(":")[0] for file in group],
             ["read", "no format", "failed"],
         )
+
+    def test_a_fault_is_not_a_failure(self):
+        """An error that is not a refusal is not named as one."""
+        self.write("a.mtsv")
+        with mock.patch("text_spreadsheet._conversion.of", side_effect=KeyError("k")):
+            with self.assertRaises(KeyError):
+                _input.of(str(self.folder))
 
     def test_nothing_where_nothing_converted(self):
         """A member not read has no artifact, text or sheets."""

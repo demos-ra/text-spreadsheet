@@ -35,8 +35,9 @@ def of(
     file, its position in that file, the part named, and how many
     records it has and how many the condition keeps. Sheets are chosen
     first; the condition sees each whole record; rows counts the records
-    it keeps, and fields cuts what rows names. Raise ValueError for an
-    address that is not written as the syntax writes one.
+    it keeps, and fields cuts what rows names; a sheet left with no
+    field is empty. Raise ValueRefusalError for an address that is not
+    written as the syntax writes one.
     """
     numbered = _numbered(group)
     if sheet is not None:
@@ -97,8 +98,7 @@ def _entry(
     part = [records[n - 1] for n in named]
     if fields is not None:
         wanted = _positions.of(fields, len(header or []))
-        header = None if header is None else [header[n - 1] for n in wanted]
-        part = [[record[n - 1] for n in wanted] for record in part]
+        header, part = _cut(header, part, wanted)
     return {
         "sheet": numbered["sheet"],
         "file": numbered["file"],
@@ -111,3 +111,24 @@ def _entry(
         "records": len(records),
         "matches": len(kept),
     }
+
+
+def _cut(
+    header: list[str] | None, records: list[list[str]], wanted: list[int]
+) -> tuple[list[str] | None, list[list[str]]]:
+    """Return a header and its records, cut to the fields named.
+
+    header -- the header, or None for an empty sheet
+    records -- the records named
+    wanted -- the positions of the fields named, from 1
+
+    The draft, Data Model: "A sheet with no lines is an empty sheet; it
+    has neither a header nor records." Grammar: record = field *(HTAB
+    field) eol.
+    """
+    if not wanted:
+        return None, []
+    return (
+        [header[n - 1] for n in wanted],
+        [[record[n - 1] for n in wanted] for record in records],
+    )

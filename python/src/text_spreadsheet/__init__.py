@@ -36,8 +36,8 @@ def read(
     absolute, an address or filter that is not written as its syntax
     writes one, or a file named directly that cannot be converted;
     LookupError for a file named directly whose extension names no
-    format; and OSError for a file that cannot be read, or a copy that
-    cannot be written.
+    format; and OSError for a folder that cannot be listed, or a file
+    named directly that cannot be read.
     """
     condition = None
     if filter is not None:

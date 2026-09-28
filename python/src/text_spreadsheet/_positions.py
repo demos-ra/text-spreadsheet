@@ -8,6 +8,8 @@ __all__ = ["of"]
 
 import re
 
+from text_spreadsheet import _refusal
+
 # RFC 7111, 3. Fragment Identification Syntax:
 # singlespec = position [ "-" position ]; position = number / "*";
 # number = 1*( DIGIT ); specs are joined by ";".
@@ -24,8 +26,8 @@ def of(address: str, count: int) -> list[int]:
     count -- how many there are to choose from
 
     Return the positions in the order the specs are written, a position
-    named twice given twice. Raise ValueError for an address that is not
-    written as the syntax writes one.
+    named twice given twice. Raise ValueRefusalError for an address that
+    is not written as the syntax writes one.
     """
     positions = []
     for spec in address.split(_LIST):
@@ -62,12 +64,12 @@ def _position(text: str, address: str, count: int) -> int:
     address -- the whole address, named in an error
     count -- how many there are to choose from
 
-    Raise ValueError for text that is neither. RFC 7111, 4.2. Semantics
-    of Fragment Identifiers: rows are counted from one, and "*" refers
-    to the last row or column.
+    Raise ValueRefusalError for text that is neither. RFC 7111, 4.2.
+    Semantics of Fragment Identifiers: rows are counted from one, and
+    "*" refers to the last row or column.
     """
     if text == _LAST:
         return count
     if not _NUMBER.fullmatch(text):
-        raise ValueError(f"not an address: {address!r}")
+        raise _refusal.ValueRefusalError(f"not an address: {address!r}")
     return int(text)

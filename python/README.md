@@ -86,7 +86,8 @@ read("/home/me/book.xlsx", sheet="2", rows="40-*", fields="2;4")
 Each position counts from 1 and is written as `2`, `1;3`, `1-3` or
 `2-*`, as [RFC 7111](https://www.rfc-editor.org/rfc/rfc7111.html)
 writes a selection of a tabular file. Positions that do not exist are
-left out; an address not written that way is refused.
+left out, and a sheet left with no field comes back empty; an address
+not written that way is refused.
 
 A filter keeps the records whose fields meet a condition, written as
 an [RFC 9535](https://www.rfc-editor.org/rfc/rfc9535.html) filter:
@@ -107,6 +108,10 @@ with a dot, in name order, and its sheets are numbered across its
 files. A file with no format, or one that cannot be read, is named in
 the map with its status, and the others are still read.
 
+A file that holds a tab or line break inside a value cannot be
+converted, as MTSV cannot hold one: named directly, it is refused with
+the reason, and in a folder it is named as failed.
+
 ## What is kept
 
 Every conversion leaves an MTSV copy of the file under your cache
@@ -115,8 +120,9 @@ directory — `~/.cache/text-spreadsheet` on Linux,
 the file it came from, with `.mtsv` added to its name, and what the
 conversion left behind beside it, with `-metadata.mtsv` added. A later
 call reads that copy unless the file has changed since, and the map
-names where it is, so it can also be read directly. An MTSV file is
-read where it is, and not copied.
+names where it is, so it can also be read directly. A copy that cannot
+be written, as on a full disk, is skipped: the read goes on, and the
+map names no copy. An MTSV file is read where it is, and not copied.
 
 Nothing else is kept, and nothing outside this machine is contacted.
 
@@ -139,6 +145,7 @@ Each module hides one decision, named beside it.
 
 ```
 src/text_spreadsheet/
+  _refusal       what a refusal is: a call the tool cannot answer, and why
   _field         what a field can hold, and how text it cannot is written
   _positions     how a list of positions is written, and what it names
   _filter        how a filter is written, and which records it keeps
@@ -157,8 +164,10 @@ tests/           one test file per module above
 Use points one way: `__main__` to `_server` to `read`; `read` to
 `_input`, `_filter`, `_selection` and `_map`; `_input` to
 `_conversion` and `_field`; `_conversion` to `_cache`, `_field` and
-`_left_behind`; `_map` to `_field`; `_selection` to `_positions`.
-Nothing points back up, and nothing but `_server` knows the protocol.
+`_left_behind`; `_map` to `_field`; `_selection` to `_positions`; and
+`_server`, `_input`, `_conversion`, `_filter` and `_positions` to
+`_refusal`. Nothing points back up, and nothing but `_server` knows the
+protocol.
 
 ## Test
 

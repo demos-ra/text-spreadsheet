@@ -51,11 +51,11 @@ def artifact(source: Path) -> Path:
     return Path(user_cache_dir(_APPNAME, appauthor=False)) / named
 
 
-def is_fresh(source: Path, stored: Path) -> bool:
+def is_fresh(stored: Path, modified: float) -> bool:
     """Return whether a copy may be used instead of its source.
 
-    source -- the absolute path of the file that was converted
-    stored -- the path artifact returned for it
+    stored -- the path artifact returned for a source file
+    modified -- the modification time of the source file
 
     RFC 9111, 4.2: "A 'fresh' response is one whose age has not yet
     exceeded its freshness lifetime." The validator is the modification
@@ -65,7 +65,7 @@ def is_fresh(source: Path, stored: Path) -> bool:
     return (
         stored.exists()
         and _metadata(stored).exists()
-        and stored.stat().st_mtime >= source.stat().st_mtime
+        and stored.stat().st_mtime >= modified
     )
 
 
