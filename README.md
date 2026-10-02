@@ -1,11 +1,11 @@
 # text-spreadsheet
 
 Let a language model read a whole multi-sheet spreadsheet as text. The
-model calls one tool with the path of a file, or a folder of files, on
-your machine, and Excel, ODS, CSV, JSON, SQLite, Parquet, Arrow and
-MTSV come back as [MTSV](https://github.com/demos-ra/mtsv): one
-plain-text file where a tab separates fields, a line break separates
-records, and a form feed separates sheets.
+model calls one tool with the pathname of a file, or of a directory of
+files, on your machine, and Excel, ODS, CSV, JSON, SQLite, Parquet,
+Arrow and MTSV come back as [MTSV](https://github.com/demos-ra/mtsv):
+one plain-text file where a tab separates fields, a line break
+separates records, and a form feed separates sheets.
 
 A language model reads text, so a binary workbook is a dead end —
 without pandas or openpyxl in the loop, it cannot see inside an
@@ -34,10 +34,10 @@ Released on PyPI as
 the [MCP registry](https://registry.modelcontextprotocol.io) as
 `io.github.demos-ra/text-spreadsheet`.
 
-See [python/README.md](python/README.md) for the tool, the addresses
-and filters it takes, and what it keeps. Its version is the `version` field of
-[python/pyproject.toml](python/pyproject.toml), and versions follow
-[Semantic Versioning](https://semver.org).
+See [python/README.md](python/README.md) for the tool, the selections
+and filters it takes, and what it keeps. Its version is the `version`
+field of [python/pyproject.toml](python/pyproject.toml), and versions
+follow [Semantic Versioning](https://semver.org).
 
 ## Layout
 
@@ -46,9 +46,10 @@ and filters it takes, and what it keeps. Its version is the `version` field of
 | `server.json` | the entry that lists this server in the MCP registry  |
 | `python/`     | Python implementation of the server                   |
 
-Each language folder holds one implementation of the same server. This
-repository holds no format code: every conversion is MTSV's, and what a
-spreadsheet holds that MTSV does not is reported as MTSV reports it.
+Each language directory holds one implementation of the same server.
+This repository holds no format code: every conversion is MTSV's, and
+what a spreadsheet holds that MTSV does not is reported as MTSV
+reports it.
 
 ## Help
 

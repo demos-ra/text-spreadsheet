@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "text-spreadsheet"
 version = "0.4.1"
-description = "Read and filter Excel, CSV, ODS, SQLite, Parquet and MTSV files — or a folder — as plain text"
+description = "Read and filter Excel, ODS, CSV, SQLite, Parquet and MTSV files — or a directory — as plain text"
 readme = "README.md"
 requires-python = ">=3.11"
 license = "MIT"

@@ -1,10 +1,15 @@
-"""How a list of positions is written, and which positions it names.
+"""How a selection is written, and which positions it names.
+
+Types:
+Spec -- one spec of a selection: its first and last position
 
 Functions:
-of -- return the positions an address names, of so many
+specs -- return the specs a selection is written as, or refuse it
+of -- return the positions specs name, of so many
+selection -- return the selection that names positions
 """
 
-__all__ = ["of"]
+__all__ = ["Spec", "specs", "of", "selection"]
 
 import re
 
@@ -18,58 +23,94 @@ _RANGE = "-"
 _LAST = "*"
 _NUMBER = re.compile("[0-9]+")
 
+Spec = tuple[str, str]
 
-def of(address: str, count: int) -> list[int]:
-    """Return the positions an address names, of so many.
 
-    address -- one spec, or several joined by ";"
+def specs(selection: str) -> list[Spec]:
+    """Return the specs a selection is written as, or refuse it.
+
+    selection -- one spec, or several joined by ";"
+
+    Return each spec as its first and last position, as written, in the
+    order written; a single position is both. Raise ValueRefusalError
+    for a selection that is not written as the syntax writes one.
+    """
+    found = []
+    for spec in selection.split(_LIST):
+        first, separator, last = spec.partition(_RANGE)
+        if not separator:
+            last = first
+        if not (_written(first) and _written(last)):
+            raise _refusal.ValueRefusalError(f"not a selection: {selection!r}")
+        found.append((first, last))
+    return found
+
+
+def of(specs: list[Spec], count: int) -> list[int]:
+    """Return the positions specs name, of so many.
+
+    specs -- what specs returned for a selection
     count -- how many there are to choose from
 
     Return the positions in the order the specs are written, a position
-    named twice given twice. Raise ValueRefusalError for an address that
-    is not written as the syntax writes one.
+    named twice given twice. RFC 7111, 4.2. Semantics of Fragment
+    Identifiers: a single selection of a non-existing row is ignored; a
+    range extends only to the actual size; a range that selects
+    inversely is ignored; each specification is processed
+    independently.
     """
     positions = []
-    for spec in address.split(_LIST):
-        positions.extend(_spec(spec, address, count))
+    for first, last in specs:
+        start = max(_position(first, count), 1)
+        end = min(_position(last, count), count)
+        positions.extend(range(start, end + 1))
     return positions
 
 
-def _spec(spec: str, address: str, count: int) -> list[int]:
-    """Return the positions one spec names.
+def selection(positions: list[int]) -> str:
+    """Return the selection that names positions, in their order.
 
-    spec -- one position, or two joined by "-"
-    address -- the whole address, named in an error
-    count -- how many there are to choose from
+    positions -- positions from 1, in the order to name them
 
-    RFC 7111, 4.2. Semantics of Fragment Identifiers: a single selection
-    of a non-existing row is ignored; a range extends only to the actual
-    size; a range that selects inversely is ignored; each specification
-    is processed independently.
+    Return each run of consecutive positions as a range, the specs
+    joined by ";", and the empty text for no positions. RFC 7111, 3.
+    Fragment Identification Syntax: singlespec = position [ "-"
+    position ].
     """
-    first, separator, last = spec.partition(_RANGE)
-    start = _position(first, address, count)
-    if not separator:
-        return [start] if 1 <= start <= count else []
-    end = _position(last, address, count)
-    if start > end:
-        return []
-    return list(range(max(start, 1), min(end, count) + 1))
+    runs: list[list[int]] = []
+    for position in positions:
+        if runs and position == runs[-1][1] + 1:
+            runs[-1][1] = position
+        else:
+            runs.append([position, position])
+    return _LIST.join(
+        str(first) if first == last else f"{first}{_RANGE}{last}"
+        for first, last in runs
+    )
 
 
-def _position(text: str, address: str, count: int) -> int:
-    """Return one position: a number, or "*" for the last.
+def _written(text: str) -> bool:
+    """Return whether a text is a position: a number, or "*".
 
     text -- the position as written
-    address -- the whole address, named in an error
+    """
+    return text == _LAST or _NUMBER.fullmatch(text) is not None
+
+
+def _position(text: str, count: int) -> int:
+    """Return the position a text names: a number, or the last for "*".
+
+    text -- the position as written
     count -- how many there are to choose from
 
-    Raise ValueRefusalError for text that is neither. RFC 7111, 4.2.
-    Semantics of Fragment Identifiers: rows are counted from one, and
-    "*" refers to the last row or column.
+    Return count + 1 for a number of more digits than count has. RFC
+    7111, 4.2. Semantics of Fragment Identifiers: rows are counted from
+    one, and "*" refers to the last row or column; a position beyond
+    the size does not exist.
     """
     if text == _LAST:
         return count
-    if not _NUMBER.fullmatch(text):
-        raise _refusal.ValueRefusalError(f"not an address: {address!r}")
-    return int(text)
+    digits = text.lstrip("0")
+    if len(digits) > len(str(count)):
+        return count + 1
+    return int(digits or "0")

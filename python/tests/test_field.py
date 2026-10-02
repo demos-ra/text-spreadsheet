@@ -1,4 +1,11 @@
-"""Test text_spreadsheet._field against the draft's Generators."""
+"""Test text_spreadsheet._field against the draft's Generators.
+
+Classes:
+TestHolds -- holds: whether a field can hold a text
+TestWritten -- written: a text as a field holds it
+"""
+
+__all__ = ["TestHolds", "TestWritten"]
 
 import unittest
 

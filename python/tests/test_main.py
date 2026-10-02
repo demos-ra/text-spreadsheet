@@ -1,4 +1,10 @@
-"""Test text_spreadsheet.__main__: the entry point of the server."""
+"""Test text_spreadsheet.__main__: the entry point of the server.
+
+Classes:
+TestMain -- main: the command a host launches
+"""
+
+__all__ = ["TestMain"]
 
 import unittest
 from unittest import mock

@@ -1,4 +1,12 @@
-"""Test text_spreadsheet._cache: platformdirs, RFC 9111, POSIX."""
+"""Test text_spreadsheet._cache: platformdirs, RFC 9111, POSIX.
+
+Classes:
+TestLocation -- location: where the MTSV copy of a file is kept
+TestStoreAndLoad -- store and load: a copy, and what was left behind
+TestIsFresh -- is_fresh: whether a stored copy may be used
+"""
+
+__all__ = ["TestLocation", "TestStoreAndLoad", "TestIsFresh"]
 
 import os
 import tempfile
@@ -14,41 +22,67 @@ import support
 TEXT = "\fPeople\nName\nAda\n"
 
 
-class TestArtifact(unittest.TestCase):
-    """artifact: where the MTSV copy of a source file is kept."""
+class TestLocation(unittest.TestCase):
+    """location: where the MTSV copy of a source file is kept."""
+
+    def setUp(self):
+        """Make a directory, and take its resolved pathname."""
+        self.directory = tempfile.TemporaryDirectory()
+        self.resolved = Path(os.path.realpath(self.directory.name))
+
+    def tearDown(self):
+        """Remove the directory."""
+        self.directory.cleanup()
+
+    def mirrored(self, name):
+        """Return where the copy of a name in the directory is kept."""
+        return support.CACHE.joinpath(*self.resolved.parts[1:], name + ".mtsv")
 
     def test_asks_platformdirs(self):
-        """platformdirs: user_cache_dir, appname, appauthor False."""
-        _cache.artifact(Path("/home/me/book.xlsx"))
-        support.user_cache_dir.assert_called_with("text-spreadsheet", appauthor=False)
+        """platformdirs: user_cache_dir, with the appname."""
+        _cache.location(self.resolved / "book.xlsx")
+        support.user_cache_dir.assert_called_with("text-spreadsheet")
 
-    def test_under_the_cache_directory(self):
-        """The copy sits under the user's cache directory."""
-        path = _cache.artifact(Path("/home/me/book.xlsx"))
-        self.assertEqual(path.parts[: len(support.CACHE.parts)], support.CACHE.parts)
-
-    def test_mirrors_the_source_path(self):
-        """The source path is mirrored, with MTSV added to the name."""
+    def test_mirrors_the_resolved_pathname(self):
+        """The resolved pathname is mirrored, with MTSV added."""
         self.assertEqual(
-            _cache.artifact(Path("/home/me/book.xlsx")),
-            support.CACHE / "home/me/book.xlsx.mtsv",
+            _cache.location(self.resolved / "book.xlsx"), self.mirrored("book.xlsx")
         )
 
-    def test_two_folders_do_not_collide(self):
-        """One name in two folders gives two copies."""
+    def test_dot_dot_reaches_the_same_copy(self):
+        """POSIX realpath: the resolution does not involve '..'."""
+        (self.resolved / "sub").mkdir()
+        dotted = self.resolved / "sub" / ".." / "book.xlsx"
+        self.assertEqual(_cache.location(dotted), self.mirrored("book.xlsx"))
+
+    def test_dot_dot_at_the_root_stays_under_the_cache(self):
+        """A copy never leaves the cache directory."""
+        dotted = Path("/..", *self.resolved.parts[1:], "book.xlsx")
+        self.assertEqual(_cache.location(dotted), self.mirrored("book.xlsx"))
+
+    def test_a_link_reaches_the_same_copy(self):
+        """POSIX realpath: the resolution involves no symbolic link."""
+        (self.resolved / "book.xlsx").write_bytes(b"")
+        (self.resolved / "link.xlsx").symlink_to(self.resolved / "book.xlsx")
+        self.assertEqual(
+            _cache.location(self.resolved / "link.xlsx"), self.mirrored("book.xlsx")
+        )
+
+    def test_two_directories_do_not_collide(self):
+        """One name in two directories gives two copies."""
         self.assertNotEqual(
-            _cache.artifact(Path("/home/me/book.xlsx")),
-            _cache.artifact(Path("/home/you/book.xlsx")),
+            _cache.location(self.resolved / "me" / "book.xlsx"),
+            _cache.location(self.resolved / "you" / "book.xlsx"),
         )
 
     def test_the_whole_name_is_kept(self):
         """Whatever the format, the copy is MTSV; two never collide."""
         names = ("book.xlsx", "book.ods", "book.sqlite", "book.parquet")
-        paths = [_cache.artifact(Path("/home/me", name)) for name in names]
-        self.assertEqual(len(set(paths)), len(names))
-        for name, path in zip(names, paths):
+        copies = [_cache.location(self.resolved / name) for name in names]
+        self.assertEqual(len(set(copies)), len(names))
+        for name, copy in zip(names, copies):
             with self.subTest(name):
-                self.assertEqual(path.name, name + ".mtsv")
+                self.assertEqual(copy.name, name + ".mtsv")
 
 
 class TestStoreAndLoad(unittest.TestCase):
@@ -67,7 +101,7 @@ class TestStoreAndLoad(unittest.TestCase):
             stored = Path(directory, "book.xlsx.mtsv")
             _cache.store(stored, TEXT, [])
             self.assertEqual(
-                sorted(path.name for path in Path(directory).iterdir()),
+                sorted(one.name for one in Path(directory).iterdir()),
                 ["book.xlsx.mtsv", "book.xlsx.mtsv-metadata.mtsv"],
             )
 
@@ -80,12 +114,24 @@ class TestStoreAndLoad(unittest.TestCase):
             with self.assertRaises(ValueError):
                 _cache.load(stored)
 
-    def test_makes_the_folders(self):
-        """Folders that do not exist yet are made."""
+    def test_makes_the_directories(self):
+        """XDG: directories that do not exist are made, as 0700."""
         with tempfile.TemporaryDirectory() as directory:
             stored = Path(directory, "home", "me", "book.xlsx.mtsv")
             _cache.store(stored, TEXT, [])
             self.assertTrue(stored.exists())
+            for made in (stored.parent, stored.parent.parent):
+                with self.subTest(made.name):
+                    self.assertEqual(made.stat().st_mode & 0o777, 0o700)
+
+    def test_leaves_a_directory_that_exists(self):
+        """XDG: the permissions of an existing directory are kept."""
+        with tempfile.TemporaryDirectory() as directory:
+            existing = Path(directory, "home")
+            existing.mkdir(mode=0o755)
+            before = existing.stat().st_mode
+            _cache.store(existing / "book.xlsx.mtsv", TEXT, [])
+            self.assertEqual(existing.stat().st_mode, before)
 
     def test_replaces_an_older_copy(self):
         """A second copy takes the place of the first."""
@@ -103,7 +149,7 @@ class TestStoreAndLoad(unittest.TestCase):
             with self.assertRaises(OSError):
                 _cache.store(stored, TEXT, [])
             self.assertEqual(
-                sorted(path.name for path in Path(directory).iterdir()),
+                sorted(one.name for one in Path(directory).iterdir()),
                 ["book.xlsx.mtsv", "book.xlsx.mtsv-metadata.mtsv"],
             )
 
@@ -114,9 +160,9 @@ class TestStoreAndLoad(unittest.TestCase):
             written = []
             original = Path.write_bytes
 
-            def spy(path, data):
-                written.append(path.name)
-                return original(path, data)
+            def spy(pathname, data):
+                written.append(pathname.name)
+                return original(pathname, data)
 
             with mock.patch.object(Path, "write_bytes", spy):
                 with mock.patch("os.getpid", return_value=7):
@@ -174,6 +220,14 @@ class TestIsFresh(unittest.TestCase):
             stored = Path(directory, "book.xlsx.mtsv")
             stored.write_bytes(b"")
             self.assertFalse(_cache.is_fresh(stored, 0))
+
+    def test_a_copy_that_cannot_be_examined(self):
+        """XDG, Basics: a copy that cannot be examined is not fresh."""
+        with tempfile.TemporaryDirectory() as directory:
+            stored = Path(directory, "book.xlsx.mtsv")
+            _cache.store(stored, TEXT, [])
+            with mock.patch.object(Path, "stat", side_effect=PermissionError):
+                self.assertFalse(_cache.is_fresh(stored, 0))
 
     def test_source_newer(self):
         """A source changed after its copy is stale."""

@@ -1,4 +1,11 @@
-"""Test text_spreadsheet._refusal: a refusal, of each kind."""
+"""Test text_spreadsheet._refusal: a refusal, of each kind.
+
+Classes:
+TestKinds -- the refusals: each a refusal, and of its standard kind
+TestOf -- of: the refusal an error of what a call names is
+"""
+
+__all__ = ["TestKinds", "TestOf"]
 
 import unittest
 

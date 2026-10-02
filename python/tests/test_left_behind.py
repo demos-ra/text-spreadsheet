@@ -1,4 +1,10 @@
-"""Test text_spreadsheet._left_behind against mtsv's report."""
+"""Test text_spreadsheet._left_behind against mtsv's report.
+
+Classes:
+TestCollect -- collect: the names an integration reported
+"""
+
+__all__ = ["TestCollect"]
 
 import logging
 import threading
@@ -43,7 +49,7 @@ class TestCollect(unittest.TestCase):
         self.assertEqual(names, [])
 
     def test_another_threads_report(self):
-        """A report made in another thread is that thread's call's."""
+        """A report made in another thread is not collected."""
         logger = logging.getLogger(LOGGER)
         with _left_behind.collect() as names:
             thread = threading.Thread(

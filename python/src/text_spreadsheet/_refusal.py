@@ -6,12 +6,12 @@ retry with adjusted parameters".
 
 Classes:
 RefusalError -- a call the tool cannot answer, with the reason
-ValueRefusalError -- a refusal of a path, an address, a filter or a
-    file's contents, as ValueError
+ValueRefusalError -- a refusal of a pathname, a selection, a filter or
+    a file's contents, as ValueError
 LookupRefusalError -- a refusal of a file whose extension names no
     format, as LookupError
-OSRefusalError -- a refusal of a file or folder that cannot be read,
-    as OSError
+OSRefusalError -- a refusal of a file or directory that cannot be
+    read, as OSError
 
 Functions:
 of -- return the refusal an error of what a call names is
@@ -31,7 +31,7 @@ class RefusalError(Exception):
 
 
 class ValueRefusalError(RefusalError, ValueError):
-    """A refusal of a path, address, filter or a file's contents."""
+    """A refusal of a pathname, selection, filter or file's contents."""
 
 
 class LookupRefusalError(RefusalError, LookupError):
@@ -39,7 +39,7 @@ class LookupRefusalError(RefusalError, LookupError):
 
 
 class OSRefusalError(RefusalError, OSError):
-    """A refusal of a file or folder that cannot be read."""
+    """A refusal of a file or directory that cannot be read."""
 
 
 def of(error: OSError | LookupError | ValueError) -> RefusalError:

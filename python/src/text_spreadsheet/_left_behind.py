@@ -23,8 +23,8 @@ def collect() -> Iterator[list[str]]:
     """Collect the names mtsv leaves behind in this thread.
 
     Yield the list, which is filled as the body runs and is complete
-    once it ends. MCP Python SDK, Tools: a plain function runs in a
-    thread, so a report made in another thread is another call's.
+    once it ends. A report made in another thread is not collected.
+    MCP Python SDK, Tools: a plain function runs in a thread.
     """
     names: list[str] = []
     logger = logging.getLogger(_LOGGER)

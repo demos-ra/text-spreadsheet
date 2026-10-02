@@ -1,4 +1,11 @@
-"""Test text_spreadsheet._filter against RFC 9535 and RFC 9485."""
+"""Test text_spreadsheet._filter against RFC 9535 and RFC 9485.
+
+Classes:
+TestFilter -- compile and matches: which records a filter keeps
+TestRefused -- compile: what is not a filter
+"""
+
+__all__ = ["TestFilter", "TestRefused"]
 
 import unittest
 
@@ -70,6 +77,11 @@ class TestFilter(unittest.TestCase):
     def test_root_is_the_records(self):
         """RFC 9535, 2.2.2: $ is the records the filter selects from."""
         self.assertEqual(kept("@[0] == $[0][0]"), [1])
+
+    def test_a_filter_too_deep_to_evaluate(self):
+        """RFC 9535, 2.1: resource depletion fails, never silently."""
+        with self.assertRaises(RecursionError):
+            kept("(" * 3000 + "@[0] == 'x'" + ")" * 3000)
 
 
 class TestRefused(unittest.TestCase):

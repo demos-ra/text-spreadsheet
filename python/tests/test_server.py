@@ -1,4 +1,11 @@
-"""Test text_spreadsheet._server against the MCP Python SDK."""
+"""Test text_spreadsheet._server against the MCP Python SDK.
+
+Classes:
+TestServer -- mcp: the server a host launches
+TestRead -- read: the tool the server offers
+"""
+
+__all__ = ["TestServer", "TestRead"]
 
 import asyncio
 import shutil
@@ -51,8 +58,8 @@ class TestRead(unittest.TestCase):
 
     def tearDown(self):
         """Remove the copies the test left in the cache."""
-        for path in self.stored:
-            shutil.rmtree(path.parent, ignore_errors=True)
+        for copy in self.stored:
+            shutil.rmtree(copy.parent, ignore_errors=True)
 
     def test_describes_itself(self):
         """The description is the docstring, as the SDK derives it."""
@@ -75,20 +82,27 @@ class TestRead(unittest.TestCase):
         )
 
     def test_maps_a_file(self):
-        """A path alone gives the map of the file."""
+        """A pathname alone gives the report, then the map."""
         with tempfile.TemporaryDirectory() as directory:
-            path = Path(directory, "book.xlsx")
-            with path.open("wb") as fp:
+            pathname = Path(directory, "book.xlsx")
+            with pathname.open("wb") as fp:
                 xlsx.dump(SHEETS, fp)
-            self.stored.append(_cache.artifact(path))
+            self.stored.append(_cache.location(pathname))
             names = [
-                sheet["sheet name"] for sheet in mtsv.loads(_server.read(str(path)))
+                sheet["sheet name"] for sheet in mtsv.loads(_server.read(str(pathname)))
             ]
-            self.assertEqual(names, ["file", "sheets", "columns", "left behind"])
+            self.assertEqual(
+                names, ["file", "not read", "left behind", "sheets", "fields"]
+            )
 
-    def test_takes_a_filter(self):
-        """The published schema offers the filter parameter."""
-        self.assertIn("filter", published("read").input_schema["properties"])
+    def test_its_parameters(self):
+        """The published schema offers each parameter, one required."""
+        schema = published("read").input_schema
+        self.assertEqual(
+            list(schema["properties"]),
+            ["pathname", "sheet", "records", "fields", "filter"],
+        )
+        self.assertEqual(schema["required"], ["pathname"])
 
     def test_a_refusal_carries_its_reason(self):
         """MCP, server/tools Error Handling: the reason is read."""
@@ -99,7 +113,7 @@ class TestRead(unittest.TestCase):
     def test_a_refusal_reaches_the_model(self):
         """Through the SDK, a refusal is anticipated, not a crash."""
         with self.assertRaises(ToolError) as caught:
-            asyncio.run(_server.mcp.call_tool("read", {"path": "x"}))
+            asyncio.run(_server.mcp.call_tool("read", {"pathname": "x"}))
         self.assertNotIsInstance(caught.exception, UnexpectedToolError)
         self.assertIn("absolute", str(caught.exception))
 
@@ -111,12 +125,12 @@ class TestRead(unittest.TestCase):
                     with self.assertRaises(type(error)):
                         _server.read("/a.xlsx")
 
-    def test_an_address_names_a_part(self):
-        """An address gives that part of the file, not the map."""
+    def test_a_selection_names_a_part(self):
+        """A selection gives the report, then those values."""
         with tempfile.TemporaryDirectory() as directory:
-            path = Path(directory, "book.xlsx")
-            with path.open("wb") as fp:
+            pathname = Path(directory, "book.xlsx")
+            with pathname.open("wb") as fp:
                 xlsx.dump(SHEETS, fp)
-            self.stored.append(_cache.artifact(path))
-            text = _server.read(str(path), sheet="1")
-            self.assertEqual(mtsv.loads(text), SHEETS)
+            self.stored.append(_cache.location(pathname))
+            text = _server.read(str(pathname), sheet="1")
+            self.assertEqual(mtsv.loads(text)[4:], SHEETS)
