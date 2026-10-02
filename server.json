@@ -3,12 +3,12 @@
   "name": "io.github.demos-ra/text-spreadsheet",
   "title": "Text Spreadsheet",
   "description": "Read and filter Excel, ODS, CSV, SQLite, Parquet and MTSV files — or a directory — as plain text",
-  "version": "0.4.1",
+  "version": "0.5.0",
   "packages": [
     {
       "registryType": "pypi",
       "identifier": "text-spreadsheet",
-      "version": "0.4.1",
+      "version": "0.5.0",
       "transport": {
         "type": "stdio"
       }
